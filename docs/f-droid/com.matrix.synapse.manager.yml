@@ -2,6 +2,9 @@ Categories:
   - Internet
   - System
 License: Apache-2.0
+AuthorName: Sure Server
+AuthorEmail: suresrvr@gmail.com
+AuthorWebSite: https://github.com/sureserverman/
 SourceCode: https://github.com/sureserverman/matrix-synapse-manager-android
 IssueTracker: https://github.com/sureserverman/matrix-synapse-manager-android/issues
 
