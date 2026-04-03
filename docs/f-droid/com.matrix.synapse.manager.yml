@@ -10,10 +10,8 @@ IssueTracker: https://github.com/sureserverman/matrix-synapse-manager-android/is
 
 RepoType: git
 Repo: https://github.com/sureserverman/matrix-synapse-manager-android
-
-Binaries: https://github.com/sureserverman/matrix-synapse-manager-android/releases/download/v%v/app-release.apk
-
-AllowedAPKSigningKeys: 2ff1409fdcc42c5993e61de3023b6fb1a8a666cfdd0c8bd744e27e3c0e9ce032
+Binaries:
+  https://github.com/sureserverman/matrix-synapse-manager-android/releases/download/v%v/app-release.apk
 
 Builds:
   - versionName: 1.0.2
@@ -22,7 +20,9 @@ Builds:
     subdir: app
     gradle:
       - yes
-    output: app/build/outputs/apk/release/app-release-unsigned.apk
+    output: build/outputs/apk/release/app-release-unsigned.apk
+
+AllowedAPKSigningKeys: 2ff1409fdcc42c5993e61de3023b6fb1a8a666cfdd0c8bd744e27e3c0e9ce032
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
