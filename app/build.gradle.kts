@@ -18,13 +18,14 @@ val keystoreProperties = Properties().apply {
 android {
     namespace = "com.matrix.synapse.manager"
     compileSdk = 35
+    buildToolsVersion = "34.0.0"
 
     defaultConfig {
         applicationId = "com.matrix.synapse.manager"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 3
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "com.matrix.synapse.manager.HiltTestRunner"
     }
@@ -46,6 +47,8 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            isCrunchPngs = false
+            vcsInfo.include = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -81,6 +84,16 @@ android {
             excludes += "META-INF/LICENSE.md"
             excludes += "META-INF/LICENSE-notice.md"
         }
+        jniLibs {
+            keepDebugSymbols += "**/*.so"
+        }
+    }
+}
+
+// Baseline profiles are non-deterministic — disable for reproducible builds
+tasks.configureEach {
+    if (name.contains("ArtProfile")) {
+        enabled = false
     }
 }
 

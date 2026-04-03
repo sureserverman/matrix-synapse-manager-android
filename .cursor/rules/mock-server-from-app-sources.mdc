@@ -1,0 +1,7 @@
+---
+description: Use when creating fake backends, stubbing APIs, setting up Docker/Podman mock servers, or needing offline testing with mock REST APIs.
+globs: ["**/mock-*/**", "**/Containerfile", "**/Dockerfile"]
+alwaysApply: false
+---
+
+Read and follow the skill file at `.cursor/skills/mock-server-from-app-sources/SKILL.md` before creating or modifying mock servers.

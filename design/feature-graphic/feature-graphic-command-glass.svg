@@ -1,0 +1,99 @@
+<svg width="1024" height="500" viewBox="0 0 1024 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1024" y2="500" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1220"/>
+      <stop offset="1" stop-color="#111827"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(760 250) rotate(90) scale(260 380)">
+      <stop stop-color="#14B8A6" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#14B8A6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="panelFill" x1="530" y1="72" x2="978" y2="430" gradientUnits="userSpaceOnUse">
+      <stop stop-color="white" stop-opacity="0.13"/>
+      <stop offset="1" stop-color="white" stop-opacity="0.03"/>
+    </linearGradient>
+    <linearGradient id="chipFill" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="white" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="white" stop-opacity="0.04"/>
+    </linearGradient>
+    <filter id="panelShadow" x="490" y="54" width="540" height="430" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dx="8" dy="14"/>
+      <feGaussianBlur stdDeviation="16"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.01 0 0 0 0 0.02 0 0 0 0 0.06 0 0 0 0.58 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_1_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1_1" result="shape"/>
+    </filter>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" stroke="#9CA3AF" stroke-opacity="0.08" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1024" height="500" fill="url(#bgGrad)"/>
+  <rect width="1024" height="500" fill="url(#grid)"/>
+  <rect width="1024" height="500" fill="url(#glow)"/>
+
+  <g opacity="0.88">
+    <text x="64" y="180" fill="#E5E7EB" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-size="62" font-weight="700">Synapse</text>
+    <text x="64" y="246" fill="#E5E7EB" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-size="62" font-weight="700">Control Center</text>
+    <text x="64" y="292" fill="#9CA3AF" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-size="23" font-weight="500">
+      <tspan x="64" dy="0">Manage users, rooms, media, and federation</tspan>
+      <tspan x="64" dy="34">across multiple Synapse servers</tspan>
+    </text>
+    <rect x="64" y="356" width="210" height="3" rx="1.5" fill="#22D3EE" fill-opacity="0.84"/>
+  </g>
+
+  <g filter="url(#panelShadow)">
+    <rect x="520" y="72" width="448" height="356" rx="26" fill="url(#panelFill)" stroke="white" stroke-opacity="0.2" stroke-width="1.2"/>
+  </g>
+
+  <text x="548" y="111" fill="#D1D5DB" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-size="15" font-weight="600">Operations Overview</text>
+  <circle cx="934" cy="106" r="4.5" fill="#22C55E"/>
+  <text x="944" y="111" fill="#86EFAC" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-size="12" font-weight="600">Live</text>
+
+  <g>
+    <rect x="548" y="128" width="128" height="86" rx="14" fill="url(#chipFill)" stroke="white" stroke-opacity="0.16"/>
+    <text x="562" y="152" fill="#A7F3D0" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-size="12" font-weight="600">Users</text>
+    <text x="562" y="187" fill="#F3F4F6" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-size="28" font-weight="700">12.4k</text>
+  </g>
+
+  <g>
+    <rect x="690" y="128" width="128" height="86" rx="14" fill="url(#chipFill)" stroke="white" stroke-opacity="0.16"/>
+    <text x="704" y="152" fill="#A7F3D0" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-size="12" font-weight="600">Rooms</text>
+    <text x="704" y="187" fill="#F3F4F6" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-size="28" font-weight="700">2.1k</text>
+  </g>
+
+  <g>
+    <rect x="832" y="128" width="120" height="86" rx="14" fill="url(#chipFill)" stroke="white" stroke-opacity="0.16"/>
+    <text x="846" y="152" fill="#FCD34D" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-size="12" font-weight="600">Media Alerts</text>
+    <text x="846" y="187" fill="#F3F4F6" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-size="28" font-weight="700">18</text>
+  </g>
+
+  <g>
+    <rect x="548" y="228" width="196" height="184" rx="16" fill="url(#chipFill)" stroke="white" stroke-opacity="0.16"/>
+    <text x="564" y="252" fill="#A5F3FC" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-size="12" font-weight="600">Load Trend</text>
+    <line x1="564" y1="372" x2="728" y2="372" stroke="#94A3B8" stroke-opacity="0.35"/>
+    <line x1="564" y1="340" x2="728" y2="340" stroke="#94A3B8" stroke-opacity="0.2"/>
+    <line x1="564" y1="308" x2="728" y2="308" stroke="#94A3B8" stroke-opacity="0.2"/>
+    <polyline points="566,362 590,350 608,354 627,332 648,339 670,314 692,321 710,287 728,302" fill="none" stroke="#22D3EE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="710" cy="287" r="4" fill="#22D3EE"/>
+  </g>
+
+  <g>
+    <rect x="758" y="228" width="194" height="86" rx="16" fill="url(#chipFill)" stroke="white" stroke-opacity="0.16"/>
+    <text x="774" y="252" fill="#A5F3FC" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-size="12" font-weight="600">Federation Uptime</text>
+    <text x="774" y="287" fill="#F3F4F6" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-size="30" font-weight="700">97%</text>
+    <circle cx="912" cy="270" r="19" fill="none" stroke="#1F2937" stroke-width="6"/>
+    <path d="M912 251 A19 19 0 1 1 899 284" fill="none" stroke="#22C55E" stroke-width="6" stroke-linecap="round"/>
+  </g>
+
+  <g>
+    <rect x="758" y="326" width="194" height="86" rx="16" fill="url(#chipFill)" stroke="white" stroke-opacity="0.16"/>
+    <text x="774" y="350" fill="#A5F3FC" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-size="12" font-weight="600">Server Health</text>
+    <text x="774" y="384" fill="#86EFAC" font-family="Segoe UI, DejaVu Sans, Arial, sans-serif" font-size="28" font-weight="700">Stable</text>
+    <rect x="878" y="358" width="58" height="10" rx="5" fill="#065F46"/>
+    <rect x="878" y="358" width="50" height="10" rx="5" fill="#22C55E"/>
+  </g>
+</svg>

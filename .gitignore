@@ -5,6 +5,7 @@
 .DS_Store
 /build
 /captures
+play-screenshots/
 .externalNativeBuild
 .cxx
 *.keystore
@@ -17,3 +18,4 @@
 keystore.properties.example
 AGENTS.md
 docs/publishing-google-play.md
+GEMINI.md
