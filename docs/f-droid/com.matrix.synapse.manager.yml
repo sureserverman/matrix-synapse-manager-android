@@ -10,7 +10,7 @@ IssueTracker: https://github.com/sureserverman/matrix-synapse-manager-android/is
 
 RepoType: git
 Repo: https://github.com/sureserverman/matrix-synapse-manager-android
-Binaries:
+Binaries: 
   https://github.com/sureserverman/matrix-synapse-manager-android/releases/download/v%v/app-release.apk
 
 Builds:
