@@ -20,6 +20,11 @@ android {
     compileSdk = 35
     buildToolsVersion = "34.0.0"
 
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+
     defaultConfig {
         applicationId = "com.matrix.synapse.manager"
         minSdk = 26
