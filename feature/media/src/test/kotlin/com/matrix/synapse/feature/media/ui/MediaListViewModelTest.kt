@@ -30,6 +30,7 @@ class MediaListViewModelTest {
     private fun createVm(): MediaListViewModel {
         coEvery { roomRepository.listRooms(any(), any(), any(), any(), any()) } returns RoomListResponse(rooms = emptyList())
         coEvery { userRepository.listUsersForMediaFilters(any(), any()) } returns emptyList()
+        coEvery { userRepository.resolveLocalServerNameForMediaAdmin(any()) } returns "example.com"
         every { serverRepository.getServerById(any()) } returns flowOf(null)
         return MediaListViewModel(mediaRepository, roomRepository, userRepository, auditLogger, serverRepository)
     }

@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.matrix.synapse.database.AuditAction
 import com.matrix.synapse.database.AuditLogger
 import com.matrix.synapse.feature.media.data.*
+import com.matrix.synapse.feature.users.data.UserRepository
 import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -17,9 +18,13 @@ import org.junit.Test
 class MediaDetailViewModelTest {
     private val mediaRepository = mockk<MediaRepository>()
     private val auditLogger = mockk<AuditLogger>(relaxed = true)
+    private val userRepository = mockk<UserRepository>()
     private val dispatcher = UnconfinedTestDispatcher()
 
-    private fun createVm() = MediaDetailViewModel(mediaRepository, auditLogger)
+    private fun createVm(): MediaDetailViewModel {
+        coEvery { userRepository.resolveLocalServerNameForMediaAdmin(any()) } returns "example.com"
+        return MediaDetailViewModel(mediaRepository, auditLogger, userRepository)
+    }
 
     @Before fun setup() { Dispatchers.setMain(dispatcher) }
     @After fun tearDown() { Dispatchers.resetMain() }
@@ -58,9 +63,10 @@ class MediaDetailViewModelTest {
         val vm = createVm()
         vm.loadMedia("https://example.com", "srv1", "example.com", "abc123")
         vm.state.test {
-            vm.delete("example.com", "abc123")
+            vm.delete("abc123")
             val state = expectMostRecentItem()
             assertTrue(state.isDeleted)
+            coVerify { mediaRepository.deleteMedia("https://example.com", "example.com", "abc123") }
             coVerify { auditLogger.insert(match { it.action == AuditAction.DELETE_MEDIA }) }
         }
     }

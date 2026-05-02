@@ -47,4 +47,16 @@ class MatrixMediaMxcParserTest {
         assertEquals("abc123", p.mediaId)
         assertEquals(false, p.hadMxcScheme)
     }
+
+    @Test
+    fun homeserverHostFromAdminBaseUrl_strips_scheme_and_slash() {
+        assertEquals(
+            "synapse.example.org",
+            MatrixMediaMxcParser.homeserverHostFromAdminBaseUrl("https://synapse.example.org"),
+        )
+        assertEquals(
+            "synapse.example.org",
+            MatrixMediaMxcParser.homeserverHostFromAdminBaseUrl("http://synapse.example.org/"),
+        )
+    }
 }

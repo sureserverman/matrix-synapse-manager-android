@@ -46,7 +46,7 @@
     <string name="deactivate">Deactivate</string>
     <string name="delete_with_media">Delete with media</string>
     <string name="cancel">Cancel</string>
-    <string name="deactivate_selected_users">Deactivate selected users</string>
+    <string name="deactivate_selected_users">Deactivate</string>
     <string name="add_user">Add user</string>
 
     <!-- User detail -->
@@ -153,9 +153,9 @@
     <string name="purge_remote_media_message">Purge cached remote media not accessed within the specified period.</string>
     <string name="purge">Purge</string>
     <string name="room">Room</string>
-    <string name="select_room">Select room</string>
+    <string name="select_room">Room</string>
     <string name="user">User</string>
-    <string name="select_user">Select user</string>
+    <string name="select_user">User</string>
     <string name="loading">Loading…</string>
     <string name="media_local">Local</string>
     <string name="media_remote">Remote</string>
@@ -163,10 +163,9 @@
     <string name="select_room_or_user_to_list_media">Select a room or user above to list media.</string>
     <string name="media_select">Select</string>
     <string name="media_delete_selected">Delete selected</string>
-    <string name="media_global_cleanup">Global cleanup (last access)</string>
     <string name="media_delete_user_scoped">Delete user media</string>
     <string name="media_delete_room_scoped">Delete room media</string>
-    <string name="media_user_created_filter_hint">Optional: filter user list by upload time (Unix ms, created_ts). Global cleanup above uses last access, not created time.</string>
+    <string name="media_user_created_filter_hint">Optional: filter user list by upload time (Unix ms, created_ts).</string>
     <string name="media_apply_date_filter">Apply time filter</string>
     <string name="media_clear_date_filter">Clear time filter</string>
     <string name="media_from_ts">Created on/after (ms)</string>
@@ -179,6 +178,32 @@
     <string name="media_section_time_filter">Upload time (optional)</string>
     <string name="media_section_list">Media</string>
     <string name="media_actions_hint">Tap a row to select or unselect. Long-press to open details.</string>
+    <string name="media_cd_clear_selection">Clear selection</string>
+    <string name="media_cd_delete_selected">Delete selected media</string>
+    <string name="media_cd_delete_user_media">Delete all media for this user</string>
+    <string name="media_cd_delete_room_media">Delete all listed media for this room</string>
+    <string name="media_detail_label_media_id">Media ID</string>
+    <string name="media_detail_label_type">Type</string>
+    <string name="media_detail_label_size">Size</string>
+    <string name="media_detail_label_upload_name">Upload Name</string>
+    <string name="media_detail_label_created">Created</string>
+    <string name="media_detail_label_last_accessed">Last Accessed</string>
+    <string name="media_detail_label_quarantined_by">Quarantined By</string>
+    <string name="media_detail_label_protected">Protected</string>
+    <string name="media_detail_unknown_type">unknown</string>
+    <string name="common_yes">Yes</string>
+    <string name="common_no">No</string>
+    <string name="media_action_quarantined">Media quarantined</string>
+    <string name="media_action_unquarantined">Media removed from quarantine</string>
+    <string name="media_action_protected">Media protected from quarantine</string>
+    <string name="media_action_unprotected">Media protection removed</string>
+    <string name="media_action_deleted">Media deleted</string>
+    <string name="media_error_invalid_date_range">Invalid date range</string>
+    <string name="media_action_deleted_items">Deleted %1$d items</string>
+    <string name="media_action_deleted_items_failed">Deleted %1$d items (%2$d failed)</string>
+    <string name="media_action_deleted_user_items">Deleted %1$d user media items</string>
+    <string name="media_action_deleted_room_items">Deleted %1$d room media items</string>
+    <string name="media_action_deleted_room_items_failed">Deleted %1$d room media items (%2$d failed)</string>
 
     <!-- Federation -->
     <string name="connection_info">Connection Info</string>
@@ -233,6 +258,6 @@
     <string name="reenter_pin">Re-enter pin</string>
 
     <!-- Common / Top bar -->
-    <string name="current_server_tap">Current server. Tap to manage server list.</string>
+    <string name="current_server_tap">Tap to manage servers</string>
     <string name="back_nav">Back</string>
 </resources>

@@ -79,6 +79,22 @@ class UserRepository @Inject constructor(
         return userId.substringAfter(':')
     }
 
+    /**
+     * Matrix `server_name` for this homeserver (the `:host` in MXIDs). Synapse
+     * `DELETE /_synapse/admin/v1/media/{server_name}/{media_id}` checks [is_mine_server_name] on this
+     * value — it must match the configured server name, **not** the admin API URL host (often
+     * `matrix.example.com` vs `example.com`).
+     *
+     * Order: `.well-known` (see [getServerNameFromWellKnown]), first user’s MXID domain
+     * ([getServerNameFromApi]), then URL host as last resort.
+     */
+    suspend fun resolveLocalServerNameForMediaAdmin(serverUrl: String): String {
+        getServerNameFromWellKnown(serverUrl)?.let { return it }
+        getServerNameFromApi(serverUrl)?.let { return it }
+        return hostOf(serverUrl)
+            ?: serverUrl.removePrefix("https://").removePrefix("http://").trimEnd('/')
+    }
+
     suspend fun getUser(serverUrl: String, userId: String): UserDetail =
         api(serverUrl).getUser(userId)
 

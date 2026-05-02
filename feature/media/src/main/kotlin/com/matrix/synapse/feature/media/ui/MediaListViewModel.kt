@@ -2,6 +2,7 @@ package com.matrix.synapse.feature.media.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.matrix.synapse.core.resources.R
 import com.matrix.synapse.database.AuditAction
 import com.matrix.synapse.database.AuditLogEntry
 import com.matrix.synapse.database.AuditLogger
@@ -35,7 +36,8 @@ data class MediaListState(
     val mediaItems: List<MediaListItem> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val actionMessage: String? = null,
+    val userError: StringResMessage? = null,
+    val actionMessage: StringResMessage? = null,
     val filterMode: String = "room",
     val filterValue: String = "",
     val rooms: List<RoomSummary> = emptyList(),
@@ -65,9 +67,20 @@ class MediaListViewModel @Inject constructor(
     private var serverUrl: String = ""
     private var serverId: String = ""
 
+    /** Cached Matrix `server_name` for admin media paths (see [UserRepository.resolveLocalServerNameForMediaAdmin]). */
+    private var matrixServerNameCache: String? = null
+
+    private suspend fun matrixServerName(): String {
+        matrixServerNameCache?.let { return it }
+        val n = userRepository.resolveLocalServerNameForMediaAdmin(serverUrl)
+        matrixServerNameCache = n
+        return n
+    }
+
     fun init(serverUrl: String, serverId: String, filterUserId: String?, filterRoomId: String?) {
         this.serverUrl = serverUrl
         this.serverId = serverId
+        matrixServerNameCache = null
         serverRepository.getServerById(serverId).onEach { server ->
             _state.value = _state.value.copy(currentServer = server)
         }.launchIn(viewModelScope)
@@ -165,16 +178,25 @@ class MediaListViewModel @Inject constructor(
         _state.value = _state.value.copy(selectedKeys = emptySet())
     }
 
+    fun clearActionMessage() {
+        _state.value = _state.value.copy(actionMessage = null)
+    }
+
+    fun clearUserError() {
+        _state.value = _state.value.copy(userError = null)
+    }
+
     fun deleteSelectedMedia() {
         val keys = _state.value.selectedKeys
         if (keys.isEmpty()) return
         val items = _state.value.mediaItems.filter { it.stableKey() in keys }
-        _state.value = _state.value.copy(error = null, actionMessage = null)
+        _state.value = _state.value.copy(error = null, userError = null, actionMessage = null)
         viewModelScope.launch {
             var ok = 0
             var failed = 0
+            val localServerName = matrixServerName()
             for (item in items) {
-                val r = runCatching { mediaRepository.deleteMedia(serverUrl, item.origin, item.mediaId) }
+                val r = runCatching { mediaRepository.deleteMedia(serverUrl, localServerName, item.mediaId) }
                 if (r.isSuccess) {
                     ok++
                     auditLogger.insert(
@@ -184,9 +206,10 @@ class MediaListViewModel @Inject constructor(
                     failed++
                 }
             }
-            val msg = buildString {
-                append("Deleted $ok items")
-                if (failed > 0) append(" ($failed failed)")
+            val msg = if (failed > 0) {
+                StringResMessage(R.string.media_action_deleted_items_failed, listOf(ok, failed))
+            } else {
+                StringResMessage(R.string.media_action_deleted_items, listOf(ok))
             }
             _state.value = _state.value.copy(actionMessage = msg, selectedKeys = emptySet())
             refresh()
@@ -201,10 +224,10 @@ class MediaListViewModel @Inject constructor(
         val fromTs = _state.value.userMediaFromTs
         val untilTs = _state.value.userMediaUntilTs
         if (fromTs != null && untilTs != null && fromTs > untilTs) {
-            _state.value = _state.value.copy(error = "Invalid date range")
+            _state.value = _state.value.copy(error = null, userError = StringResMessage(R.string.media_error_invalid_date_range))
             return
         }
-        _state.value = _state.value.copy(error = null, actionMessage = null)
+        _state.value = _state.value.copy(error = null, userError = null, actionMessage = null)
         viewModelScope.launch {
             runCatching {
                 var deletedTotal = 0
@@ -221,7 +244,7 @@ class MediaListViewModel @Inject constructor(
                 } while (true)
                 deletedTotal
             }.onSuccess { total ->
-                _state.value = _state.value.copy(actionMessage = "Deleted $total user media items")
+                _state.value = _state.value.copy(actionMessage = StringResMessage(R.string.media_action_deleted_user_items, listOf(total)))
                 auditLogger.insert(
                     AuditLogEntry(
                         serverId = serverId,
@@ -237,22 +260,23 @@ class MediaListViewModel @Inject constructor(
                 )
                 refresh()
             }.onFailure { e ->
-                _state.value = _state.value.copy(error = e.message)
+                _state.value = _state.value.copy(error = e.message, userError = null)
             }
         }
     }
 
-    /** Deletes discoverable media for the current room list (per MXC origin/id); remote-only rows use their origin from MXC. */
+    /** Deletes discoverable media for the current room list; path server name must be local (see [deleteSelectedMedia]). */
     fun bulkDeleteRoomScopedMedia() {
         val roomId = _state.value.selectedRoomId ?: return
         val items = _state.value.mediaItems
         if (items.isEmpty()) return
-        _state.value = _state.value.copy(error = null, actionMessage = null)
+        _state.value = _state.value.copy(error = null, userError = null, actionMessage = null)
         viewModelScope.launch {
             var ok = 0
             var failed = 0
+            val localServerName = matrixServerName()
             for (item in items) {
-                val r = runCatching { mediaRepository.deleteMedia(serverUrl, item.origin, item.mediaId) }
+                val r = runCatching { mediaRepository.deleteMedia(serverUrl, localServerName, item.mediaId) }
                 if (r.isSuccess) ok++ else failed++
             }
             auditLogger.insert(
@@ -267,9 +291,10 @@ class MediaListViewModel @Inject constructor(
                     ),
                 ),
             )
-            val msg = buildString {
-                append("Deleted $ok room media items")
-                if (failed > 0) append(" ($failed failed)")
+            val msg = if (failed > 0) {
+                StringResMessage(R.string.media_action_deleted_room_items_failed, listOf(ok, failed))
+            } else {
+                StringResMessage(R.string.media_action_deleted_room_items, listOf(ok))
             }
             _state.value = _state.value.copy(actionMessage = msg)
             loadRoomMedia(roomId)
@@ -289,10 +314,10 @@ class MediaListViewModel @Inject constructor(
     }
 
     fun loadRoomMedia(roomId: String) {
-        _state.value = _state.value.copy(isLoading = true, error = null, filterMode = "room", filterValue = roomId)
+        _state.value = _state.value.copy(isLoading = true, error = null, userError = null, filterMode = "room", filterValue = roomId)
         viewModelScope.launch {
             runCatching {
-                val serverName = extractServerName(serverUrl)
+                val serverName = matrixServerName()
                 val response = mediaRepository.listRoomMedia(serverUrl, roomId)
                 val localItems = response.local.mapNotNull { raw ->
                     val p = MatrixMediaMxcParser.parse(raw, serverName) ?: return@mapNotNull null
@@ -306,7 +331,7 @@ class MediaListViewModel @Inject constructor(
             }.onSuccess { items ->
                 _state.value = _state.value.copy(mediaItems = items, isLoading = false)
             }.onFailure { e ->
-                _state.value = _state.value.copy(error = e.message, isLoading = false)
+                _state.value = _state.value.copy(error = e.message, userError = null, isLoading = false)
             }
         }
     }
@@ -314,10 +339,10 @@ class MediaListViewModel @Inject constructor(
     fun loadUserMedia(userId: String) {
         val fromTs = _state.value.userMediaFromTs
         val untilTs = _state.value.userMediaUntilTs
-        _state.value = _state.value.copy(isLoading = true, error = null, filterMode = "user", filterValue = userId)
+        _state.value = _state.value.copy(isLoading = true, error = null, userError = null, filterMode = "user", filterValue = userId)
         viewModelScope.launch {
             runCatching {
-                val serverName = extractServerName(serverUrl)
+                val serverName = matrixServerName()
                 val response = userRepository.listUserMedia(
                     serverUrl = serverUrl,
                     userId = userId,
@@ -331,11 +356,9 @@ class MediaListViewModel @Inject constructor(
             }.onSuccess { items ->
                 _state.value = _state.value.copy(mediaItems = items, isLoading = false)
             }.onFailure { e ->
-                _state.value = _state.value.copy(error = e.message, isLoading = false)
+                _state.value = _state.value.copy(error = e.message, userError = null, isLoading = false)
             }
         }
     }
 
-    private fun extractServerName(serverUrl: String): String =
-        serverUrl.removePrefix("https://").removePrefix("http://").trimEnd('/')
 }

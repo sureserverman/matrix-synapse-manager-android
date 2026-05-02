@@ -73,4 +73,12 @@ object MatrixMediaMxcParser {
             ParsedMediaReference(origin = host, mediaId = mediaId, hadMxcScheme = false)
         }.getOrNull()
     }
+
+    /**
+     * Host segment of the Synapse admin base URL. Synapse requires this value as `{server_name}` in
+     * `DELETE /_synapse/admin/v1/media/{server_name}/{media_id}` — it must be the **local** homeserver
+     * name (`is_mine_server_name`), not the MXC federated origin.
+     */
+    fun homeserverHostFromAdminBaseUrl(baseUrl: String): String =
+        baseUrl.removePrefix("https://").removePrefix("http://").trimEnd('/')
 }

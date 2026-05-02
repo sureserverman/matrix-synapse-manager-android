@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.matrix.synapse.database.AuditAction
 import com.matrix.synapse.database.AuditLogEntry
 import com.matrix.synapse.database.AuditLogger
+import com.matrix.synapse.core.resources.R
 import com.matrix.synapse.feature.media.data.MediaInfoResponse
 import com.matrix.synapse.feature.media.data.MediaRepository
+import com.matrix.synapse.feature.users.data.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,13 +22,14 @@ data class MediaDetailState(
     val isActioning: Boolean = false,
     val isDeleted: Boolean = false,
     val error: String? = null,
-    val actionMessage: String? = null,
+    val actionMessage: StringResMessage? = null,
 )
 
 @HiltViewModel
 class MediaDetailViewModel @Inject constructor(
     private val mediaRepository: MediaRepository,
     private val auditLogger: AuditLogger,
+    private val userRepository: UserRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(MediaDetailState())
@@ -35,55 +38,78 @@ class MediaDetailViewModel @Inject constructor(
     private var serverUrl: String = ""
     private var serverId: String = ""
 
+    /** Cached for Synapse admin media paths (`server_name` in URLs). */
+    private var resolvedLocalServerName: String? = null
+
+    private suspend fun localServerName(): String {
+        resolvedLocalServerName?.let { return it }
+        val n = userRepository.resolveLocalServerNameForMediaAdmin(serverUrl)
+        resolvedLocalServerName = n
+        return n
+    }
+
     fun loadMedia(serverUrl: String, serverId: String, serverName: String, mediaId: String) {
         this.serverUrl = serverUrl
         this.serverId = serverId
+        resolvedLocalServerName = null
         _state.value = MediaDetailState(isLoading = true)
         viewModelScope.launch {
-            runCatching { mediaRepository.getMediaInfo(serverUrl, serverName, mediaId) }
+            runCatching { mediaRepository.getMediaInfo(serverUrl, localServerName(), mediaId) }
                 .onSuccess { info -> _state.value = MediaDetailState(media = info) }
                 .onFailure { e -> _state.value = MediaDetailState(error = e.message) }
         }
     }
 
     fun quarantine(serverName: String, mediaId: String) =
-        performAction(AuditAction.QUARANTINE_MEDIA, mediaId) {
-            mediaRepository.quarantineMedia(serverUrl, serverName, mediaId); "Media quarantined"
+        performAction(AuditAction.QUARANTINE_MEDIA, mediaId, R.string.media_action_quarantined) {
+            mediaRepository.quarantineMedia(serverUrl, localServerName(), mediaId)
         }
 
     fun unquarantine(serverName: String, mediaId: String) =
-        performAction(AuditAction.UNQUARANTINE_MEDIA, mediaId) {
-            mediaRepository.unquarantineMedia(serverUrl, serverName, mediaId); "Media removed from quarantine"
+        performAction(AuditAction.UNQUARANTINE_MEDIA, mediaId, R.string.media_action_unquarantined) {
+            mediaRepository.unquarantineMedia(serverUrl, localServerName(), mediaId)
         }
 
     fun protect(mediaId: String) =
-        performAction(AuditAction.PROTECT_MEDIA, mediaId) {
-            mediaRepository.protectMedia(serverUrl, mediaId); "Media protected from quarantine"
+        performAction(AuditAction.PROTECT_MEDIA, mediaId, R.string.media_action_protected) {
+            mediaRepository.protectMedia(serverUrl, mediaId)
         }
 
     fun unprotect(mediaId: String) =
-        performAction(AuditAction.UNPROTECT_MEDIA, mediaId) {
-            mediaRepository.unprotectMedia(serverUrl, mediaId); "Media protection removed"
+        performAction(AuditAction.UNPROTECT_MEDIA, mediaId, R.string.media_action_unprotected) {
+            mediaRepository.unprotectMedia(serverUrl, mediaId)
         }
 
-    fun delete(serverName: String, mediaId: String) {
+    /** Synapse DELETE /media/{serverName}/{mediaId} requires the configured Matrix server name, not the admin URL host. */
+    fun delete(mediaId: String) {
         _state.value = _state.value.copy(isActioning = true, error = null, actionMessage = null)
         viewModelScope.launch {
-            runCatching { mediaRepository.deleteMedia(serverUrl, serverName, mediaId) }
+            runCatching { mediaRepository.deleteMedia(serverUrl, localServerName(), mediaId) }
                 .onSuccess {
-                    _state.value = _state.value.copy(isActioning = false, isDeleted = true, actionMessage = "Media deleted")
+                    _state.value = _state.value.copy(
+                        isActioning = false,
+                        isDeleted = true,
+                        actionMessage = StringResMessage(R.string.media_action_deleted),
+                    )
                     auditLogger.insert(AuditLogEntry(serverId = serverId, action = AuditAction.DELETE_MEDIA, details = mapOf("media_id" to mediaId)))
                 }
                 .onFailure { e -> _state.value = _state.value.copy(isActioning = false, error = e.message) }
         }
     }
 
-    private fun performAction(action: AuditAction, mediaId: String, block: suspend () -> String) {
+    fun clearActionMessage() {
+        _state.value = _state.value.copy(actionMessage = null)
+    }
+
+    private fun performAction(action: AuditAction, mediaId: String, messageResId: Int, block: suspend () -> Unit) {
         _state.value = _state.value.copy(isActioning = true, error = null, actionMessage = null)
         viewModelScope.launch {
             runCatching { block() }
-                .onSuccess { msg ->
-                    _state.value = _state.value.copy(isActioning = false, actionMessage = msg)
+                .onSuccess {
+                    _state.value = _state.value.copy(
+                        isActioning = false,
+                        actionMessage = StringResMessage(messageResId),
+                    )
                     auditLogger.insert(AuditLogEntry(serverId = serverId, action = action, details = mapOf("media_id" to mediaId)))
                     reloadMedia(mediaId)
                 }
@@ -92,13 +118,9 @@ class MediaDetailViewModel @Inject constructor(
     }
 
     private fun reloadMedia(mediaId: String) {
-        val serverName = extractServerName(serverUrl)
         viewModelScope.launch {
-            runCatching { mediaRepository.getMediaInfo(serverUrl, serverName, mediaId) }
+            runCatching { mediaRepository.getMediaInfo(serverUrl, localServerName(), mediaId) }
                 .onSuccess { info -> _state.value = _state.value.copy(media = info) }
         }
     }
-
-    private fun extractServerName(serverUrl: String): String =
-        serverUrl.removePrefix("https://").removePrefix("http://").trimEnd('/')
 }

@@ -1,14 +1,16 @@
 package com.matrix.synapse.feature.media.ui
 
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.MeetingRoom
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import com.matrix.synapse.core.ui.Spacing
@@ -19,6 +21,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -48,9 +51,27 @@ fun MediaListScreen(
     var showRoomScopedDeleteDialog by remember { mutableStateOf(false) }
     var userFromTsText by remember { mutableStateOf("") }
     var userUntilTsText by remember { mutableStateOf("") }
+    val context = LocalContext.current
+
+    fun resolveStringResMessage(msg: StringResMessage): String =
+        if (msg.formatArgs.isEmpty()) {
+            context.getString(msg.resId)
+        } else {
+            context.getString(msg.resId, *msg.formatArgs.toTypedArray())
+        }
 
     LaunchedEffect(state.actionMessage) {
-        state.actionMessage?.let { snackbarHostState.showSnackbar(it) }
+        state.actionMessage?.let {
+            snackbarHostState.showSnackbar(resolveStringResMessage(it))
+            viewModel.clearActionMessage()
+        }
+    }
+
+    LaunchedEffect(state.userError) {
+        state.userError?.let {
+            snackbarHostState.showSnackbar(resolveStringResMessage(it))
+            viewModel.clearUserError()
+        }
     }
 
     LaunchedEffect(state.error) {
@@ -69,8 +90,6 @@ fun MediaListScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
-        val actionScroll = rememberScrollState()
-        val secondaryScroll = rememberScrollState()
         when {
             state.isLoading && state.mediaItems.isEmpty() && state.error == null -> {
                 Box(
@@ -119,53 +138,11 @@ fun MediaListScreen(
                         verticalArrangement = Arrangement.spacedBy(Spacing.FieldSpacing),
                     ) {
                         item {
-                            Column(verticalArrangement = Arrangement.spacedBy(Spacing.TightSpacing)) {
-                                Text(
-                                    text = stringResource(R.string.media_actions_hint),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                                Row(
-                                    modifier = Modifier.horizontalScroll(actionScroll),
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.TightSpacing),
-                                ) {
-                                    if (state.selectedKeys.isNotEmpty()) {
-                                        TextButton(onClick = { viewModel.clearSelection() }) {
-                                            Text(stringResource(R.string.cancel))
-                                        }
-                                    }
-                                    Button(
-                                        onClick = { viewModel.deleteSelectedMedia() },
-                                        enabled = state.selectedKeys.isNotEmpty(),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.error,
-                                        ),
-                                    ) { Text(stringResource(R.string.media_delete_selected)) }
-                                }
-                                Row(
-                                    modifier = Modifier.horizontalScroll(secondaryScroll),
-                                    horizontalArrangement = Arrangement.spacedBy(Spacing.TightSpacing),
-                                ) {
-                                    if (state.selectedUserId != null) {
-                                        OutlinedButton(
-                                            onClick = { showUserScopedDeleteDialog = true },
-                                            enabled = !state.isLoading,
-                                            colors = ButtonDefaults.outlinedButtonColors(
-                                                contentColor = MaterialTheme.colorScheme.error,
-                                            ),
-                                        ) { Text(stringResource(R.string.media_delete_user_scoped)) }
-                                    }
-                                    if (state.selectedRoomId != null) {
-                                        OutlinedButton(
-                                            onClick = { showRoomScopedDeleteDialog = true },
-                                            enabled = !state.isLoading && state.mediaItems.isNotEmpty(),
-                                            colors = ButtonDefaults.outlinedButtonColors(
-                                                contentColor = MaterialTheme.colorScheme.error,
-                                            ),
-                                        ) { Text(stringResource(R.string.media_delete_room_scoped)) }
-                                    }
-                                }
-                            }
+                            Text(
+                                text = stringResource(R.string.media_actions_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
 
                         item {
@@ -272,12 +249,18 @@ fun MediaListScreen(
                             }
                         }
 
-                        if (state.mediaItems.isNotEmpty()) {
+                        if (state.selectedRoomId != null || state.selectedUserId != null) {
                             item {
-                                Text(
-                                    text = stringResource(R.string.media_section_list),
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                MediaListToolbar(
+                                    selectedKeysNonEmpty = state.selectedKeys.isNotEmpty(),
+                                    showDeleteUser = state.selectedUserId != null,
+                                    showDeleteRoom = state.selectedRoomId != null,
+                                    roomDeleteEnabled = !state.isLoading && state.mediaItems.isNotEmpty(),
+                                    userDeleteEnabled = !state.isLoading,
+                                    onClearSelection = { viewModel.clearSelection() },
+                                    onDeleteSelected = { viewModel.deleteSelectedMedia() },
+                                    onDeleteUserMedia = { showUserScopedDeleteDialog = true },
+                                    onDeleteRoomMedia = { showRoomScopedDeleteDialog = true },
                                     modifier = Modifier.padding(top = Spacing.TightSpacing),
                                 )
                             }
@@ -369,6 +352,90 @@ fun MediaListScreen(
                 }
             },
         )
+    }
+}
+
+@Composable
+private fun MediaListToolbar(
+    selectedKeysNonEmpty: Boolean,
+    showDeleteUser: Boolean,
+    showDeleteRoom: Boolean,
+    roomDeleteEnabled: Boolean,
+    userDeleteEnabled: Boolean,
+    onClearSelection: () -> Unit,
+    onDeleteSelected: () -> Unit,
+    onDeleteUserMedia: () -> Unit,
+    onDeleteRoomMedia: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val errorColors = IconButtonDefaults.iconButtonColors(
+        contentColor = MaterialTheme.colorScheme.error,
+        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+    )
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.media_section_list),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(0.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (selectedKeysNonEmpty) {
+                IconButton(
+                    onClick = onClearSelection,
+                    modifier = Modifier.testTag("media_clear_selection"),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = stringResource(R.string.media_cd_clear_selection),
+                    )
+                }
+            }
+            IconButton(
+                onClick = onDeleteSelected,
+                enabled = selectedKeysNonEmpty,
+                modifier = Modifier.testTag("media_delete_selected"),
+                colors = errorColors,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = stringResource(R.string.media_cd_delete_selected),
+                )
+            }
+            if (showDeleteUser) {
+                IconButton(
+                    onClick = onDeleteUserMedia,
+                    enabled = userDeleteEnabled,
+                    modifier = Modifier.testTag("media_delete_user_scoped"),
+                    colors = errorColors,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.DeleteSweep,
+                        contentDescription = stringResource(R.string.media_cd_delete_user_media),
+                    )
+                }
+            }
+            if (showDeleteRoom) {
+                IconButton(
+                    onClick = onDeleteRoomMedia,
+                    enabled = roomDeleteEnabled,
+                    modifier = Modifier.testTag("media_delete_room_scoped"),
+                    colors = errorColors,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.MeetingRoom,
+                        contentDescription = stringResource(R.string.media_cd_delete_room_media),
+                    )
+                }
+            }
+        }
     }
 }
 

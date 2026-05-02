@@ -7,6 +7,7 @@ import androidx.compose.runtime.*
 import com.matrix.synapse.core.ui.SynapseTopBar
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.matrix.synapse.core.resources.R
@@ -31,9 +32,18 @@ fun MediaDetailScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     LaunchedEffect(state.actionMessage) {
-        state.actionMessage?.let { snackbarHostState.showSnackbar(it) }
+        state.actionMessage?.let { msg ->
+            val text = if (msg.formatArgs.isEmpty()) {
+                context.getString(msg.resId)
+            } else {
+                context.getString(msg.resId, *msg.formatArgs.toTypedArray())
+            }
+            snackbarHostState.showSnackbar(text)
+            viewModel.clearActionMessage()
+        }
     }
 
     LaunchedEffect(state.isDeleted) {
@@ -74,14 +84,27 @@ fun MediaDetailScreen(
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(stringResource(R.string.media_info), style = MaterialTheme.typography.titleMedium)
-                            InfoRow("Media ID", media.mediaId)
-                            InfoRow("Type", media.mediaType ?: "unknown")
-                            InfoRow("Size", formatBytes(media.mediaLength))
-                            InfoRow("Upload Name", media.uploadName ?: "\u2014")
-                            InfoRow("Created", formatTimestamp(media.createdTs))
-                            InfoRow("Last Accessed", formatTimestamp(media.lastAccessTs))
-                            InfoRow("Quarantined By", media.quarantinedBy ?: "No")
-                            InfoRow("Protected", if (media.safeFromQuarantine) "Yes" else "No")
+                            InfoRow(stringResource(R.string.media_detail_label_media_id), media.mediaId)
+                            InfoRow(
+                                stringResource(R.string.media_detail_label_type),
+                                media.mediaType ?: stringResource(R.string.media_detail_unknown_type),
+                            )
+                            InfoRow(stringResource(R.string.media_detail_label_size), formatBytes(media.mediaLength))
+                            InfoRow(stringResource(R.string.media_detail_label_upload_name), media.uploadName ?: "\u2014")
+                            InfoRow(stringResource(R.string.media_detail_label_created), formatTimestamp(media.createdTs))
+                            InfoRow(stringResource(R.string.media_detail_label_last_accessed), formatTimestamp(media.lastAccessTs))
+                            InfoRow(
+                                stringResource(R.string.media_detail_label_quarantined_by),
+                                media.quarantinedBy ?: stringResource(R.string.common_no),
+                            )
+                            InfoRow(
+                                stringResource(R.string.media_detail_label_protected),
+                                if (media.safeFromQuarantine) {
+                                    stringResource(R.string.common_yes)
+                                } else {
+                                    stringResource(R.string.common_no)
+                                },
+                            )
                         }
                     }
 
@@ -144,7 +167,7 @@ fun MediaDetailScreen(
                 Button(
                     onClick = {
                         showDeleteDialog = false
-                        viewModel.delete(serverName, mediaId)
+                        viewModel.delete(mediaId)
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 ) { Text(stringResource(R.string.delete)) }
