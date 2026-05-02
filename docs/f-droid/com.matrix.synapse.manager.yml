@@ -1,6 +1,5 @@
 Categories:
   - Internet
-  - System
 License: Apache-2.0
 AuthorName: Sure Server
 AuthorEmail: suresrvr@gmail.com
@@ -16,15 +15,20 @@ Binaries:
 Builds:
   - versionName: 1.0.2
     versionCode: 3
-    commit: v1.0.2
+    commit: 4bc0a65b49f43920774b6b35b6d712c95673f553
     subdir: app
     gradle:
       - yes
-    output: build/outputs/apk/release/app-release-unsigned.apk
+  - versionName: 1.1.0
+    versionCode: 4
+    commit: f64cdeedd6d5bce6b8885f08a0e4305a8a386908
+    subdir: app
+    gradle:
+      - yes
 
 AllowedAPKSigningKeys: 2ff1409fdcc42c5993e61de3023b6fb1a8a666cfdd0c8bd744e27e3c0e9ce032
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.0.2
-CurrentVersionCode: 3
+CurrentVersion: 1.1.0
+CurrentVersionCode: 4

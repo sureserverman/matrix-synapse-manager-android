@@ -9,7 +9,7 @@ Features:
 • User lifecycle — List, search, create, edit, lock, suspend, deactivate users
 • Device & session control — View and revoke device sessions
 • Rooms — List, block/unblock, delete, add members, set room admin
-• Media — List, quarantine, delete; bulk delete and purge remote media cache
+• Media — List by room or user (including MXC links), quarantine, delete; bulk delete and purge remote media cache
 • Federation — List federated servers, view details, reset connection
 • Server dashboard — Version, metrics, background jobs (pause/resume, etc.)
 • Moderation — Event reports list and dismiss

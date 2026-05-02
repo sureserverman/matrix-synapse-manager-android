@@ -1,0 +1,1 @@
+Media: MXC URL handling, list media by user, and clearer room/user selection. Localized media flows and UI polish. F-Droid listing includes the app icon in fastlane metadata.
