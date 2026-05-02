@@ -42,6 +42,7 @@ You either **ask F-Droid to add the app** (they write the metadata and build it)
 3. **Metadata and store copy in this repo**  
    - **F-Droid metadata (build recipe):** [docs/f-droid/com.matrix.synapse.manager.yml](f-droid/com.matrix.synapse.manager.yml) contains license, repo URL, and build instructions. Copy this file into fdroiddata as `metadata/com.matrix.synapse.manager.yml`.  
    - **Summary and description:** F-Droid pulls them from the app repo via the [fastlane structure](https://f-droid.org/en/docs/All_About_Descriptions_Graphics_and_Screenshots/): [fastlane/metadata/android/en-US/](fastlane/metadata/android/en-US/) holds `short_description.txt`, `full_description.txt`, `title.txt`, and changelogs. Do not add Summary or Description to the fdroiddata YAML.
+   - **Icon (and optional screenshots):** The website and client need **`fastlane/metadata/android/en-US/images/icon.png`**. Without it, the app page has no icon. Optional: `images/phoneScreenshots/*.png`, `images/featureGraphic.png` — see the linked F-Droid doc. F-Droid reads metadata from the **latest tagged release**, so after adding assets you need a **new tag** (and push) for the build to pick them up.
 
 ---
 
