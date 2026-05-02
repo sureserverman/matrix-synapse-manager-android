@@ -21,7 +21,7 @@ Builds:
       - yes
   - versionName: 1.1.0
     versionCode: 4
-    commit: f64cdeedd6d5bce6b8885f08a0e4305a8a386908
+    commit: 3209360e3ebd824e0378bb61229ea20f54ee6737
     subdir: app
     gradle:
       - yes
