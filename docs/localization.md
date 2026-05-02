@@ -54,7 +54,7 @@ All user-facing screens use `stringResource()` for titles, labels, buttons, dial
 - **Rooms:** RoomListScreen, RoomDetailScreen
 - **Devices:** DeviceListScreen, WhoisScreen
 - **Stats:** ServerDashboardScreen
-- **Media:** MediaListScreen, MediaDetailScreen (filters, bulk delete, purge, media info, actions)
+- **Media:** MediaListScreen, MediaDetailScreen (filters, selection/delete, user/room-scoped actions, media info)
 - **Federation:** FederationListScreen, FederationDetailScreen
 - **Jobs:** BackgroundJobsScreen
 - **Moderation:** EventReportsScreen, EventReportDetailScreen

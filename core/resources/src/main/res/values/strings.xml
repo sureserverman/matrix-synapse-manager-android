@@ -161,6 +161,24 @@
     <string name="media_remote">Remote</string>
     <string name="no_media_found">No media found</string>
     <string name="select_room_or_user_to_list_media">Select a room or user above to list media.</string>
+    <string name="media_select">Select</string>
+    <string name="media_delete_selected">Delete selected</string>
+    <string name="media_global_cleanup">Global cleanup (last access)</string>
+    <string name="media_delete_user_scoped">Delete user media</string>
+    <string name="media_delete_room_scoped">Delete room media</string>
+    <string name="media_user_created_filter_hint">Optional: filter user list by upload time (Unix ms, created_ts). Global cleanup above uses last access, not created time.</string>
+    <string name="media_apply_date_filter">Apply time filter</string>
+    <string name="media_clear_date_filter">Clear time filter</string>
+    <string name="media_from_ts">Created on/after (ms)</string>
+    <string name="media_until_ts">Created on/before (ms)</string>
+    <string name="media_delete_user_confirm_title">Delete this user’s media?</string>
+    <string name="media_delete_user_confirm_body">Deletes local media uploaded by this user, optionally limited by the created-time filter you set. Does not remove media only referenced from other homeservers’ repos.</string>
+    <string name="media_delete_room_confirm_title">Delete listed room media?</string>
+    <string name="media_delete_room_confirm_body">Deletes each media item listed for this room (local and cached remote copies on this server). Room listings only include media from unencrypted events.</string>
+    <string name="media_section_scope">Scope</string>
+    <string name="media_section_time_filter">Upload time (optional)</string>
+    <string name="media_section_list">Media</string>
+    <string name="media_actions_hint">Tap a row to select or unselect. Long-press to open details.</string>
 
     <!-- Federation -->
     <string name="connection_info">Connection Info</string>

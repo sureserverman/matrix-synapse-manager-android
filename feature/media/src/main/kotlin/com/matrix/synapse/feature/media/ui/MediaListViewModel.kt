@@ -11,6 +11,7 @@ import com.matrix.synapse.feature.rooms.data.RoomSummary
 import com.matrix.synapse.feature.servers.data.ServerRepository
 import com.matrix.synapse.feature.users.data.UserRepository
 import com.matrix.synapse.feature.users.data.UserSummary
+import com.matrix.synapse.model.MatrixMediaMxcParser
 import com.matrix.synapse.model.Server
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.launchIn
@@ -27,6 +28,8 @@ data class MediaListItem(
     val isLocal: Boolean,
 )
 
+fun MediaListItem.stableKey(): String = "${origin}|${mediaId}"
+
 data class MediaListState(
     val currentServer: Server? = null,
     val mediaItems: List<MediaListItem> = emptyList(),
@@ -41,6 +44,10 @@ data class MediaListState(
     val usersLoading: Boolean = false,
     val selectedRoomId: String? = null,
     val selectedUserId: String? = null,
+    /** Created-upload timestamp filters for user-media listing and user-scoped bulk delete (Synapse admin API). */
+    val userMediaFromTs: Long? = null,
+    val userMediaUntilTs: Long? = null,
+    val selectedKeys: Set<String> = emptySet(),
 )
 
 @HiltViewModel
@@ -108,9 +115,9 @@ class MediaListViewModel @Inject constructor(
         _state.value = _state.value.copy(usersLoading = true)
         viewModelScope.launch {
             runCatching {
-                userRepository.listUsers(serverUrl, limit = 500)
-            }.onSuccess { response ->
-                _state.value = _state.value.copy(users = response.users, usersLoading = false)
+                userRepository.listUsersForMediaFilters(serverUrl, limit = 500)
+            }.onSuccess { users ->
+                _state.value = _state.value.copy(users = users, usersLoading = false)
             }.onFailure {
                 _state.value = _state.value.copy(usersLoading = false)
             }
@@ -123,6 +130,7 @@ class MediaListViewModel @Inject constructor(
             selectedUserId = null,
             filterMode = "room",
             filterValue = roomId ?: "",
+            selectedKeys = emptySet(),
         )
         if (roomId != null) loadRoomMedia(roomId)
         else _state.value = _state.value.copy(mediaItems = emptyList())
@@ -134,9 +142,138 @@ class MediaListViewModel @Inject constructor(
             selectedUserId = userId,
             filterMode = "user",
             filterValue = userId ?: "",
+            selectedKeys = emptySet(),
         )
         if (userId != null) loadUserMedia(userId)
         else _state.value = _state.value.copy(mediaItems = emptyList())
+    }
+
+    fun setUserMediaDateRange(fromTs: Long?, untilTs: Long?) {
+        _state.value = _state.value.copy(userMediaFromTs = fromTs, userMediaUntilTs = untilTs)
+        val uid = _state.value.selectedUserId
+        if (uid != null) loadUserMedia(uid)
+    }
+
+    fun toggleSelection(item: MediaListItem) {
+        val key = item.stableKey()
+        val next = _state.value.selectedKeys.toMutableSet()
+        if (!next.add(key)) next.remove(key)
+        _state.value = _state.value.copy(selectedKeys = next)
+    }
+
+    fun clearSelection() {
+        _state.value = _state.value.copy(selectedKeys = emptySet())
+    }
+
+    fun deleteSelectedMedia() {
+        val keys = _state.value.selectedKeys
+        if (keys.isEmpty()) return
+        val items = _state.value.mediaItems.filter { it.stableKey() in keys }
+        _state.value = _state.value.copy(error = null, actionMessage = null)
+        viewModelScope.launch {
+            var ok = 0
+            var failed = 0
+            for (item in items) {
+                val r = runCatching { mediaRepository.deleteMedia(serverUrl, item.origin, item.mediaId) }
+                if (r.isSuccess) {
+                    ok++
+                    auditLogger.insert(
+                        AuditLogEntry(serverId = serverId, action = AuditAction.DELETE_MEDIA, details = mapOf("media_id" to item.mediaId, "origin" to item.origin)),
+                    )
+                } else {
+                    failed++
+                }
+            }
+            val msg = buildString {
+                append("Deleted $ok items")
+                if (failed > 0) append(" ($failed failed)")
+            }
+            _state.value = _state.value.copy(actionMessage = msg, selectedKeys = emptySet())
+            refresh()
+        }
+    }
+
+    /**
+     * Deletes all local media uploaded by the selected user matching optional created-ts bounds.
+     */
+    fun bulkDeleteUserScopedMedia() {
+        val userId = _state.value.selectedUserId ?: return
+        val fromTs = _state.value.userMediaFromTs
+        val untilTs = _state.value.userMediaUntilTs
+        if (fromTs != null && untilTs != null && fromTs > untilTs) {
+            _state.value = _state.value.copy(error = "Invalid date range")
+            return
+        }
+        _state.value = _state.value.copy(error = null, actionMessage = null)
+        viewModelScope.launch {
+            runCatching {
+                var deletedTotal = 0
+                do {
+                    val batch = userRepository.deleteUserMediaBulk(
+                        serverUrl = serverUrl,
+                        userId = userId,
+                        limit = 1000,
+                        fromTs = fromTs,
+                        untilTs = untilTs,
+                    )
+                    deletedTotal += batch.total
+                    if (batch.total <= 0) break
+                } while (true)
+                deletedTotal
+            }.onSuccess { total ->
+                _state.value = _state.value.copy(actionMessage = "Deleted $total user media items")
+                auditLogger.insert(
+                    AuditLogEntry(
+                        serverId = serverId,
+                        action = AuditAction.BULK_DELETE_MEDIA,
+                        details = mapOf(
+                            "scope" to "user",
+                            "user_id" to userId,
+                            "from_ts" to (fromTs?.toString() ?: ""),
+                            "until_ts" to (untilTs?.toString() ?: ""),
+                            "deleted" to total.toString(),
+                        ),
+                    ),
+                )
+                refresh()
+            }.onFailure { e ->
+                _state.value = _state.value.copy(error = e.message)
+            }
+        }
+    }
+
+    /** Deletes discoverable media for the current room list (per MXC origin/id); remote-only rows use their origin from MXC. */
+    fun bulkDeleteRoomScopedMedia() {
+        val roomId = _state.value.selectedRoomId ?: return
+        val items = _state.value.mediaItems
+        if (items.isEmpty()) return
+        _state.value = _state.value.copy(error = null, actionMessage = null)
+        viewModelScope.launch {
+            var ok = 0
+            var failed = 0
+            for (item in items) {
+                val r = runCatching { mediaRepository.deleteMedia(serverUrl, item.origin, item.mediaId) }
+                if (r.isSuccess) ok++ else failed++
+            }
+            auditLogger.insert(
+                AuditLogEntry(
+                    serverId = serverId,
+                    action = AuditAction.BULK_DELETE_MEDIA,
+                    details = mapOf(
+                        "scope" to "room",
+                        "room_id" to roomId,
+                        "deleted" to ok.toString(),
+                        "failed" to failed.toString(),
+                    ),
+                ),
+            )
+            val msg = buildString {
+                append("Deleted $ok room media items")
+                if (failed > 0) append(" ($failed failed)")
+            }
+            _state.value = _state.value.copy(actionMessage = msg)
+            loadRoomMedia(roomId)
+        }
     }
 
     fun refresh() {
@@ -157,9 +294,15 @@ class MediaListViewModel @Inject constructor(
             runCatching {
                 val serverName = extractServerName(serverUrl)
                 val response = mediaRepository.listRoomMedia(serverUrl, roomId)
-                val items = response.local.map { MediaListItem(mediaId = it, origin = serverName, isLocal = true) } +
-                    response.remote.map { MediaListItem(mediaId = it, origin = serverName, isLocal = false) }
-                items
+                val localItems = response.local.mapNotNull { raw ->
+                    val p = MatrixMediaMxcParser.parse(raw, serverName) ?: return@mapNotNull null
+                    MediaListItem(mediaId = p.mediaId, origin = p.origin, isLocal = true)
+                }
+                val remoteItems = response.remote.mapNotNull { raw ->
+                    val p = MatrixMediaMxcParser.parse(raw, serverName) ?: return@mapNotNull null
+                    MediaListItem(mediaId = p.mediaId, origin = p.origin, isLocal = false)
+                }
+                localItems + remoteItems
             }.onSuccess { items ->
                 _state.value = _state.value.copy(mediaItems = items, isLoading = false)
             }.onFailure { e ->
@@ -169,48 +312,26 @@ class MediaListViewModel @Inject constructor(
     }
 
     fun loadUserMedia(userId: String) {
+        val fromTs = _state.value.userMediaFromTs
+        val untilTs = _state.value.userMediaUntilTs
         _state.value = _state.value.copy(isLoading = true, error = null, filterMode = "user", filterValue = userId)
         viewModelScope.launch {
             runCatching {
                 val serverName = extractServerName(serverUrl)
-                val response = userRepository.listUserMedia(serverUrl, userId)
-                response.media.map { MediaListItem(mediaId = it.mediaId, origin = serverName, isLocal = true) }
+                val response = userRepository.listUserMedia(
+                    serverUrl = serverUrl,
+                    userId = userId,
+                    fromTs = fromTs,
+                    untilTs = untilTs,
+                )
+                response.media.mapNotNull { item ->
+                    val p = MatrixMediaMxcParser.parse(item.mediaId, serverName) ?: return@mapNotNull null
+                    MediaListItem(mediaId = p.mediaId, origin = p.origin, isLocal = true)
+                }
             }.onSuccess { items ->
                 _state.value = _state.value.copy(mediaItems = items, isLoading = false)
             }.onFailure { e ->
                 _state.value = _state.value.copy(error = e.message, isLoading = false)
-            }
-        }
-    }
-
-    fun bulkDeleteMedia(beforeTs: Long, sizeGt: Long?, keepProfiles: Boolean?) {
-        _state.value = _state.value.copy(error = null, actionMessage = null)
-        viewModelScope.launch {
-            runCatching {
-                mediaRepository.bulkDeleteMedia(serverUrl, beforeTs, sizeGt, keepProfiles)
-            }.onSuccess { response ->
-                _state.value = _state.value.copy(actionMessage = "Deleted ${response.total} media items")
-                auditLogger.insert(
-                    AuditLogEntry(serverId = serverId, action = AuditAction.BULK_DELETE_MEDIA, details = mapOf("deleted" to response.total.toString()))
-                )
-            }.onFailure { e ->
-                _state.value = _state.value.copy(error = e.message)
-            }
-        }
-    }
-
-    fun purgeRemoteMediaCache(beforeTs: Long) {
-        _state.value = _state.value.copy(error = null, actionMessage = null)
-        viewModelScope.launch {
-            runCatching {
-                mediaRepository.purgeRemoteMediaCache(serverUrl, beforeTs)
-            }.onSuccess { response ->
-                _state.value = _state.value.copy(actionMessage = "Purged ${response.deleted} remote media items")
-                auditLogger.insert(
-                    AuditLogEntry(serverId = serverId, action = AuditAction.PURGE_REMOTE_MEDIA_CACHE, details = mapOf("deleted" to response.deleted.toString()))
-                )
-            }.onFailure { e ->
-                _state.value = _state.value.copy(error = e.message)
             }
         }
     }

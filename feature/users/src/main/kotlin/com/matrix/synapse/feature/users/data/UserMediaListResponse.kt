@@ -6,7 +6,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class UserMediaListResponse(
     @SerialName("media") val media: List<MediaItem> = emptyList(),
-    @SerialName("next_token") val nextToken: String? = null,
+    /** Pagination cursor; Synapse returns an integer. Treat as opaque when passing as `from`. */
+    @SerialName("next_token") val nextToken: Long? = null,
     @SerialName("total") val total: Long = 0L,
 )
 

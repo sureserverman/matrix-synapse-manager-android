@@ -43,8 +43,25 @@ interface UserAdminApi {
     @GET("/_synapse/admin/v1/users/{userId}/media")
     suspend fun listUserMedia(
         @Path("userId") userId: String,
-        @Query("limit") limit: Int = 500,
+        @Query("from") from: String? = null,
+        @Query("limit") limit: Int? = null,
+        @Query("order_by") orderBy: String? = null,
+        @Query("dir") dir: String? = null,
+        @Query("from_ts") fromTs: Long? = null,
+        @Query("until_ts") untilTs: Long? = null,
     ): UserMediaListResponse
+
+    /** Deletes local media uploaded by the user; supports the same filter/sort params as [listUserMedia]. */
+    @DELETE("/_synapse/admin/v1/users/{userId}/media")
+    suspend fun deleteUserMediaBulk(
+        @Path("userId") userId: String,
+        @Query("from") from: String? = null,
+        @Query("limit") limit: Int? = null,
+        @Query("order_by") orderBy: String? = null,
+        @Query("dir") dir: String? = null,
+        @Query("from_ts") fromTs: Long? = null,
+        @Query("until_ts") untilTs: Long? = null,
+    ): UserMediaBulkDeleteResponse
 
     @DELETE("/_synapse/admin/v1/media/{serverName}/{mediaId}")
     suspend fun deleteMedia(

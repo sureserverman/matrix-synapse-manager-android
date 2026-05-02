@@ -35,16 +35,4 @@ interface MediaAdminApi {
         @Path("serverName", encoded = true) serverName: String,
         @Path("mediaId") mediaId: String,
     ): DeleteMediaResponse
-
-    @POST("/_synapse/admin/v1/media/delete")
-    suspend fun bulkDeleteMedia(
-        @Query("before_ts") beforeTs: Long,
-        @Query("size_gt") sizeGt: Long? = null,
-        @Query("keep_profiles") keepProfiles: Boolean? = null,
-    ): DeleteMediaResponse
-
-    @POST("/_synapse/admin/v1/purge_media_cache")
-    suspend fun purgeRemoteMediaCache(
-        @Query("before_ts") beforeTs: Long,
-    ): PurgeMediaCacheResponse
 }

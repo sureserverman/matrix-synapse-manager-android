@@ -30,11 +30,4 @@ class MediaRepository @Inject constructor(
 
     suspend fun deleteMedia(serverUrl: String, serverName: String, mediaId: String): DeleteMediaResponse =
         api(serverUrl).deleteMedia(serverName, mediaId)
-
-    suspend fun bulkDeleteMedia(
-        serverUrl: String, beforeTs: Long, sizeGt: Long? = null, keepProfiles: Boolean? = null,
-    ): DeleteMediaResponse = api(serverUrl).bulkDeleteMedia(beforeTs, sizeGt, keepProfiles)
-
-    suspend fun purgeRemoteMediaCache(serverUrl: String, beforeTs: Long): PurgeMediaCacheResponse =
-        api(serverUrl).purgeRemoteMediaCache(beforeTs)
 }

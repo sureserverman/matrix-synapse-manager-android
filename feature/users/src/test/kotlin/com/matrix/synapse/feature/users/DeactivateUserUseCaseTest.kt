@@ -33,17 +33,15 @@ class DeactivateUserUseCaseTest {
 
     @Test
     fun deactivation_deletes_media_first_when_option_enabled() = runTest {
-        // 1. Media list response
+        // 1. Bulk user-media delete (batch of deletions)
         server.enqueue(
-            MockResponse().setBody(
-                """{"media":[{"media_id":"abc123","media_length":1024},{"media_id":"def456","media_length":2048}],"total":2}"""
-            )
+            MockResponse().setBody("""{"deleted_media":["abc123","def456"],"total":2}""")
         )
-        // 2. Delete first media item
-        server.enqueue(MockResponse().setBody("{}"))
-        // 3. Delete second media item
-        server.enqueue(MockResponse().setBody("{}"))
-        // 4. Deactivate
+        // 2. Second batch: nothing left
+        server.enqueue(
+            MockResponse().setBody("""{"deleted_media":[],"total":0}""")
+        )
+        // 3. Deactivate
         server.enqueue(MockResponse().setBody("""{"id_server_unbind_result":"success"}"""))
 
         val result = useCase.deactivate(
@@ -54,16 +52,15 @@ class DeactivateUserUseCaseTest {
         )
 
         assertTrue(result.isSuccess)
-        assertEquals(4, server.requestCount)
+        assertEquals(3, server.requestCount)
 
-        val listRequest = server.takeRequest()
-        assertTrue("Should list user media first", listRequest.path!!.contains("media"))
+        val bulk1 = server.takeRequest()
+        assertEquals("DELETE", bulk1.method)
+        val p1 = bulk1.path!!
+        assertTrue("Expected …/users/…/media, was: $p1", p1.contains("/users/") && p1.contains("/media"))
 
-        val delete1 = server.takeRequest()
-        assertEquals("DELETE", delete1.method)
-
-        val delete2 = server.takeRequest()
-        assertEquals("DELETE", delete2.method)
+        val bulk2 = server.takeRequest()
+        assertEquals("DELETE", bulk2.method)
 
         val deactivateRequest = server.takeRequest()
         assertEquals("POST", deactivateRequest.method)
@@ -87,14 +84,10 @@ class DeactivateUserUseCaseTest {
 
     @Test
     fun deactivation_continues_after_partial_media_delete_failure() = runTest {
-        // Media list: two items
+        // Bulk user-media delete fails
         server.enqueue(
-            MockResponse().setBody("""{"media":[{"media_id":"abc123"},{"media_id":"def456"}],"total":2}""")
+            MockResponse().setResponseCode(404).setBody("""{"errcode":"M_NOT_FOUND"}""")
         )
-        // First media delete fails (404)
-        server.enqueue(MockResponse().setResponseCode(404).setBody("""{"errcode":"M_NOT_FOUND"}"""))
-        // Second media delete succeeds
-        server.enqueue(MockResponse().setBody("{}"))
         // Deactivate still proceeds
         server.enqueue(MockResponse().setBody("""{"id_server_unbind_result":"success"}"""))
 
@@ -105,9 +98,8 @@ class DeactivateUserUseCaseTest {
             confirmed = true,
         )
 
-        // Should succeed despite partial media failure
-        assertTrue("Should succeed despite partial media delete failure", result.isSuccess)
-        assertEquals(4, server.requestCount)
+        assertTrue("Should succeed despite bulk media delete failure", result.isSuccess)
+        assertEquals(2, server.requestCount)
     }
 
     @Test

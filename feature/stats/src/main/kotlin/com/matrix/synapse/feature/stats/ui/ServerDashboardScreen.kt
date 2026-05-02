@@ -26,6 +26,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import com.matrix.synapse.core.resources.R
 import androidx.compose.ui.unit.dp
@@ -43,6 +45,7 @@ fun ServerDashboardScreen(
     onRoomsClick: () -> Unit = {},
     onRoomClick: (String) -> Unit = {},
     onOpenReportsClick: () -> Unit = {},
+    onTopMediaUserClick: (userId: String) -> Unit = {},
     viewModel: ServerDashboardViewModel = hiltViewModel(),
 ) {
     LaunchedEffect(serverId, serverUrl) { viewModel.loadDashboard(serverId, serverUrl) }
@@ -195,9 +198,15 @@ fun ServerDashboardScreen(
                         }
                     }
                 }
-                items(state.topMediaUsers) { user ->
+                items(state.topMediaUsers, key = { it.userId }) { user ->
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .clickable(onClick = { onTopMediaUserClick(user.userId) })
+                            .semantics {
+                                contentDescription = "${user.displayname ?: user.userId}, ${user.mediaCount} files"
+                            },
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Column(modifier = Modifier.weight(1f)) {

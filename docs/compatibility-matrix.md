@@ -23,8 +23,11 @@ This document maps each app feature to the minimum Synapse server version requir
 | Lock / unlock user | `PUT /_synapse/admin/v2/users/{userId}` with `locked` | 1.93.0 | Capability-gated in UI |
 | Suspend / unsuspend | `PUT /_synapse/admin/v1/suspend/{userId}` | **1.73.0** | Hidden on older servers |
 | Deactivate user | `POST /_synapse/admin/v1/deactivate/{userId}` | 1.0.0 | |
-| List user media | `GET /_synapse/admin/v1/users/{userId}/media` | 1.32.0 | Used before deactivate with erase |
+| List user media | `GET /_synapse/admin/v1/users/{userId}/media` | 1.32.0 | Pagination and sort/filter query params per Synapse docs; optional `from_ts`/`until_ts` when supported by server |
+| Delete user media (bulk) | `DELETE /_synapse/admin/v1/users/{userId}/media` | 1.32.0 | Same filters as list; no `next_token`; loops until a batch deletes 0 items |
 | Delete media | `DELETE /_synapse/admin/v1/media/{serverName}/{mediaId}` | 1.32.0 | Best-effort; partial failures allowed |
+| List room media | `GET /_synapse/admin/v1/room/{roomId}/media` | 1.32.0 | Returns MXC URIs; **only media referenced from unencrypted events** |
+| Bulk delete local media (global) | `POST /_synapse/admin/v1/media/delete` | 1.32.0 | Synapse API (last access via `before_ts`); **not called from this app** — use server-side tools if needed |
 | List devices | `GET /_synapse/admin/v2/users/{userId}/devices` | 1.28.0 | |
 | Get device | `GET /_synapse/admin/v2/users/{userId}/devices/{deviceId}` | 1.28.0 | |
 | Delete device | `DELETE /_synapse/admin/v2/users/{userId}/devices/{deviceId}` | 1.28.0 | Requires confirmation |

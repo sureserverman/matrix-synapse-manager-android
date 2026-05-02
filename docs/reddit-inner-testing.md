@@ -59,7 +59,7 @@ Thanks in advance to anyone who tries it — happy to answer questions here or o
 
 I’ve built an Android app for administering Synapse homeservers and I’m doing **internal testing** on Google Play. I’m looking for volunteer testers who run (or have access to) a Synapse server.
 
-**What it does:** Full admin from your phone: users (list, search, create, lock/unlock, suspend, deactivate with optional media wipe), devices and sessions (view, revoke, whois), rooms (list, block, delete, members, set admin), media (list by room/user, quarantine, delete, bulk purge), federation (list, reset), server dashboard (version, metrics), background jobs (updates status, pause/resume, start), and event reports (list, dismiss). Multi-server via `.well-known` or manual URL; tokens in Keystore, no password storage, no telemetry. Uses the Synapse Admin API only.
+**What it does:** Full admin from your phone: users (list, search, create, lock/unlock, suspend, deactivate with optional media wipe), devices and sessions (view, revoke, whois), rooms (list, block, delete, members, set admin), media (list by room/user, quarantine, delete, selection), federation (list, reset), server dashboard (version, metrics), background jobs (updates status, pause/resume, start), and event reports (list, dismiss). Multi-server via `.well-known` or manual URL; tokens in Keystore, no password storage, no telemetry. Uses the Synapse Admin API only.
 
 **What I need:** If you’re a Synapse admin with an Android device, you can join the test via the link below, install from Play, and report bugs or UX feedback. You’ll need a server with the Admin API available and your admin credentials.
 

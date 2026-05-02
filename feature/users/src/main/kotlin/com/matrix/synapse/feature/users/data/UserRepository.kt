@@ -47,7 +47,25 @@ class UserRepository @Inject constructor(
         from: String? = null,
         limit: Int = 100,
         name: String? = null,
-    ): UsersListResponse = api(serverUrl).listUsers(from = from, limit = limit, name = name)
+        guests: Boolean? = null,
+        deactivated: Boolean? = null,
+    ): UsersListResponse = api(serverUrl).listUsers(
+        from = from,
+        limit = limit,
+        name = name,
+        guests = guests,
+        deactivated = deactivated,
+    )
+
+    /** Users that appear in admin lists for active and deactivated accounts (deduped). */
+    suspend fun listUsersForMediaFilters(serverUrl: String, limit: Int = 500): List<UserSummary> {
+        val active = api(serverUrl).listUsers(limit = limit, deactivated = false)
+        val deactivated = api(serverUrl).listUsers(limit = limit, deactivated = true)
+        val byId = LinkedHashMap<String, UserSummary>()
+        active.users.forEach { byId[it.userId] = it }
+        deactivated.users.forEach { byId[it.userId] = it }
+        return byId.values.toList()
+    }
 
     /**
      * Resolves the server name used in Matrix IDs (@user:serverName) from the server.
@@ -84,8 +102,45 @@ class UserRepository @Inject constructor(
         erase: Boolean,
     ): DeactivateResponse = api(serverUrl).deactivateUser(userId, DeactivateRequest(erase = erase))
 
-    suspend fun listUserMedia(serverUrl: String, userId: String): UserMediaListResponse =
-        api(serverUrl).listUserMedia(userId)
+    suspend fun listUserMedia(
+        serverUrl: String,
+        userId: String,
+        from: String? = null,
+        limit: Int? = 500,
+        orderBy: String? = null,
+        dir: String? = null,
+        fromTs: Long? = null,
+        untilTs: Long? = null,
+    ): UserMediaListResponse =
+        api(serverUrl).listUserMedia(
+            userId = userId,
+            from = from,
+            limit = limit,
+            orderBy = orderBy,
+            dir = dir,
+            fromTs = fromTs,
+            untilTs = untilTs,
+        )
+
+    suspend fun deleteUserMediaBulk(
+        serverUrl: String,
+        userId: String,
+        from: String? = null,
+        limit: Int? = null,
+        orderBy: String? = null,
+        dir: String? = null,
+        fromTs: Long? = null,
+        untilTs: Long? = null,
+    ): UserMediaBulkDeleteResponse =
+        api(serverUrl).deleteUserMediaBulk(
+            userId = userId,
+            from = from,
+            limit = limit,
+            orderBy = orderBy,
+            dir = dir,
+            fromTs = fromTs,
+            untilTs = untilTs,
+        )
 
     suspend fun deleteMedia(serverUrl: String, serverName: String, mediaId: String) {
         api(serverUrl).deleteMedia(serverName, mediaId)

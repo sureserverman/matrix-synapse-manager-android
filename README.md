@@ -13,11 +13,11 @@ A production-ready Android app for administering [Synapse](https://matrix.org/do
 - **User lifecycle** — List, search (paginated), create, edit, lock/unlock, suspend/unsuspend, and deactivate users; optional media erasure before deactivation.
 - **Device & session control** — View, inspect, and revoke device sessions; whois active-connection view.
 - **Rooms** — List rooms, view details, block/unblock, delete, add members, set room admin.
-- **Media** — List and manage user media; quarantine, protect, delete; bulk delete and purge remote media cache.
+- **Media** — List room/user media (room listings are unencrypted-events only per Synapse), MXC-aware per-item selection and deletes, optional scoped user bulk delete and delete-listed-room-media (`DELETE …/users/{id}/media`, room-scoped deletes via listed MXC rows).
 - **Federation** — List federated servers, view details, reset connection.
 - **Server dashboard** — View server version and key metrics; background jobs (updates status, pause/resume, start job).
 - **Moderation** — List and manage event reports (view, dismiss).
-- **Audit logging** — Destructive actions (deactivate, delete device/room/media, federation reset, etc.) are recorded locally in a Room database. View and export UI are planned for a future release.
+- **Audit logging** — Destructive actions (deactivate, delete device/room/media, federation reset, etc.) are recorded locally in a Room database (no in-app audit viewer/export; re-verify before each release if you rely on this behavior).
 - **App lock** — Optional PIN gate on app resume; configurable in Settings.
 
 ## Architecture

@@ -425,6 +425,11 @@ fun AppNavHost(
                 onOpenReportsClick = {
                     navController.navigate(EventReportsList(route.serverId, route.serverUrl))
                 },
+                onTopMediaUserClick = { userId ->
+                    navController.navigate(
+                        MediaList(route.serverId, route.serverUrl, filterUserId = userId),
+                    )
+                },
             )
         }
 

@@ -31,8 +31,3 @@ data class DeleteMediaResponse(
     @SerialName("deleted_media") val deletedMedia: List<String> = emptyList(),
     val total: Int = 0,
 )
-
-@Serializable
-data class PurgeMediaCacheResponse(
-    val deleted: Int = 0,
-)

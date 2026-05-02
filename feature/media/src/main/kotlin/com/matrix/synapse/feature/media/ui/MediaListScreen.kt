@@ -1,9 +1,14 @@
 package com.matrix.synapse.feature.media.ui
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import com.matrix.synapse.core.ui.Spacing
@@ -13,8 +18,10 @@ import com.matrix.synapse.feature.users.data.UserSummary
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import com.matrix.synapse.core.resources.R
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -37,8 +44,10 @@ fun MediaListScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var roomDropdownExpanded by remember { mutableStateOf(false) }
     var userDropdownExpanded by remember { mutableStateOf(false) }
-    var showBulkDeleteDialog by remember { mutableStateOf(false) }
-    var showPurgeDialog by remember { mutableStateOf(false) }
+    var showUserScopedDeleteDialog by remember { mutableStateOf(false) }
+    var showRoomScopedDeleteDialog by remember { mutableStateOf(false) }
+    var userFromTsText by remember { mutableStateOf("") }
+    var userUntilTsText by remember { mutableStateOf("") }
 
     LaunchedEffect(state.actionMessage) {
         state.actionMessage?.let { snackbarHostState.showSnackbar(it) }
@@ -60,191 +69,397 @@ fun MediaListScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            Row(
-                modifier = Modifier.padding(horizontal = Spacing.ScreenPadding, vertical = Spacing.TightSpacing),
-                horizontalArrangement = Arrangement.spacedBy(Spacing.TightSpacing),
-            ) {
-                Button(onClick = { showBulkDeleteDialog = true }) { Text(stringResource(R.string.bulk_delete)) }
-                OutlinedButton(onClick = { showPurgeDialog = true }) { Text(stringResource(R.string.purge_cache)) }
-            }
-            Row(
-                modifier = Modifier.padding(horizontal = Spacing.ScreenPadding, vertical = Spacing.TightSpacing),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                RoomDropdown(
-                    rooms = state.rooms,
-                    roomsLoading = state.roomsLoading,
-                    selectedRoomId = state.selectedRoomId,
-                    expanded = roomDropdownExpanded,
-                    onExpandedChange = { roomDropdownExpanded = it; if (it) userDropdownExpanded = false },
-                    onRoomSelected = { viewModel.selectRoom(it) },
-                    modifier = Modifier.weight(1f),
-                )
-                UserDropdown(
-                    users = state.users,
-                    usersLoading = state.usersLoading,
-                    selectedUserId = state.selectedUserId,
-                    expanded = userDropdownExpanded,
-                    onExpandedChange = { userDropdownExpanded = it; if (it) roomDropdownExpanded = false },
-                    onUserSelected = { viewModel.selectUser(it) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            when {
-                state.isLoading && state.mediaItems.isEmpty() -> Box(
-                    modifier = Modifier.fillMaxSize(),
+        val actionScroll = rememberScrollState()
+        val secondaryScroll = rememberScrollState()
+        when {
+            state.isLoading && state.mediaItems.isEmpty() && state.error == null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
                     contentAlignment = Alignment.Center,
-                ) { CircularProgressIndicator(modifier = Modifier.testTag("media_list_loading")) }
+                ) {
+                    CircularProgressIndicator(modifier = Modifier.testTag("media_list_loading"))
+                }
+            }
 
-                state.error != null && state.mediaItems.isEmpty() -> Text(
-                    text = state.error!!,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(Spacing.ScreenPadding).testTag("media_list_error"),
-                )
+            state.error != null && state.mediaItems.isEmpty() -> {
+                Card(
+                    modifier = Modifier
+                        .padding(padding)
+                        .padding(Spacing.ScreenPadding)
+                        .fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                ) {
+                    Text(
+                        text = state.error!!,
+                        modifier = Modifier.padding(Spacing.FieldSpacing).testTag("media_list_error"),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
 
-                else -> PullToRefreshBox(
+            else -> {
+                PullToRefreshBox(
                     isRefreshing = state.isLoading,
                     onRefresh = { viewModel.refresh() },
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
                 ) {
-                    LazyColumn(modifier = Modifier.testTag("media_list")) {
-                    items(state.mediaItems, key = { it.mediaId }) { item ->
-                        ListItem(
-                            headlineContent = { Text(item.mediaId, maxLines = 1) },
-                            supportingContent = {
-                                Text(if (item.isLocal) stringResource(R.string.media_local) else stringResource(R.string.media_remote))
-                            },
-                            modifier = Modifier
-                                .clickable { onMediaClick(item.origin, item.mediaId) }
-                                .testTag("media_row_${item.mediaId}"),
-                        )
-                    }
-                    if (state.mediaItems.isEmpty()) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .testTag("media_list"),
+                        contentPadding = PaddingValues(
+                            horizontal = Spacing.ScreenPadding,
+                            vertical = Spacing.TightSpacing,
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.FieldSpacing),
+                    ) {
                         item {
-                            val emptyMessage = when {
-                                filterRoomId != null || filterUserId != null -> stringResource(R.string.no_media_found)
-                                state.selectedRoomId == null && state.selectedUserId == null ->
-                                    stringResource(R.string.select_room_or_user_to_list_media)
-                                else -> stringResource(R.string.no_media_found)
+                            Column(verticalArrangement = Arrangement.spacedBy(Spacing.TightSpacing)) {
+                                Text(
+                                    text = stringResource(R.string.media_actions_hint),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Row(
+                                    modifier = Modifier.horizontalScroll(actionScroll),
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.TightSpacing),
+                                ) {
+                                    if (state.selectedKeys.isNotEmpty()) {
+                                        TextButton(onClick = { viewModel.clearSelection() }) {
+                                            Text(stringResource(R.string.cancel))
+                                        }
+                                    }
+                                    Button(
+                                        onClick = { viewModel.deleteSelectedMedia() },
+                                        enabled = state.selectedKeys.isNotEmpty(),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.error,
+                                        ),
+                                    ) { Text(stringResource(R.string.media_delete_selected)) }
+                                }
+                                Row(
+                                    modifier = Modifier.horizontalScroll(secondaryScroll),
+                                    horizontalArrangement = Arrangement.spacedBy(Spacing.TightSpacing),
+                                ) {
+                                    if (state.selectedUserId != null) {
+                                        OutlinedButton(
+                                            onClick = { showUserScopedDeleteDialog = true },
+                                            enabled = !state.isLoading,
+                                            colors = ButtonDefaults.outlinedButtonColors(
+                                                contentColor = MaterialTheme.colorScheme.error,
+                                            ),
+                                        ) { Text(stringResource(R.string.media_delete_user_scoped)) }
+                                    }
+                                    if (state.selectedRoomId != null) {
+                                        OutlinedButton(
+                                            onClick = { showRoomScopedDeleteDialog = true },
+                                            enabled = !state.isLoading && state.mediaItems.isNotEmpty(),
+                                            colors = ButtonDefaults.outlinedButtonColors(
+                                                contentColor = MaterialTheme.colorScheme.error,
+                                            ),
+                                        ) { Text(stringResource(R.string.media_delete_room_scoped)) }
+                                    }
+                                }
                             }
-                            Text(
-                                emptyMessage,
-                                modifier = Modifier.padding(Spacing.ScreenPadding).testTag("media_list_empty"),
-                                style = MaterialTheme.typography.bodyMedium,
+                        }
+
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                ),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(Spacing.FieldSpacing),
+                                    verticalArrangement = Arrangement.spacedBy(Spacing.FieldSpacing),
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.media_section_scope),
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                    RoomDropdown(
+                                        rooms = state.rooms,
+                                        roomsLoading = state.roomsLoading,
+                                        selectedRoomId = state.selectedRoomId,
+                                        expanded = roomDropdownExpanded,
+                                        onExpandedChange = {
+                                            roomDropdownExpanded = it
+                                            if (it) userDropdownExpanded = false
+                                        },
+                                        onRoomSelected = { viewModel.selectRoom(it) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                    UserDropdown(
+                                        users = state.users,
+                                        usersLoading = state.usersLoading,
+                                        selectedUserId = state.selectedUserId,
+                                        expanded = userDropdownExpanded,
+                                        onExpandedChange = {
+                                            userDropdownExpanded = it
+                                            if (it) roomDropdownExpanded = false
+                                        },
+                                        onUserSelected = { viewModel.selectUser(it) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                }
+                            }
+                        }
+
+                        if (state.selectedUserId != null) {
+                            item {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                    ),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(Spacing.FieldSpacing),
+                                        verticalArrangement = Arrangement.spacedBy(Spacing.TightSpacing),
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.media_section_time_filter),
+                                            style = MaterialTheme.typography.titleSmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.media_user_created_filter_hint),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                        OutlinedTextField(
+                                            value = userFromTsText,
+                                            onValueChange = { userFromTsText = it },
+                                            label = { Text(stringResource(R.string.media_from_ts)) },
+                                            singleLine = true,
+                                            modifier = Modifier.fillMaxWidth(),
+                                        )
+                                        OutlinedTextField(
+                                            value = userUntilTsText,
+                                            onValueChange = { userUntilTsText = it },
+                                            label = { Text(stringResource(R.string.media_until_ts)) },
+                                            singleLine = true,
+                                            modifier = Modifier.fillMaxWidth(),
+                                        )
+                                        Row(
+                                            horizontalArrangement = Arrangement.spacedBy(Spacing.TightSpacing),
+                                        ) {
+                                            Button(
+                                                onClick = {
+                                                    viewModel.setUserMediaDateRange(
+                                                        userFromTsText.toLongOrNull(),
+                                                        userUntilTsText.toLongOrNull(),
+                                                    )
+                                                },
+                                            ) { Text(stringResource(R.string.media_apply_date_filter)) }
+                                            TextButton(onClick = {
+                                                userFromTsText = ""
+                                                userUntilTsText = ""
+                                                viewModel.setUserMediaDateRange(null, null)
+                                            }) { Text(stringResource(R.string.media_clear_date_filter)) }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (state.mediaItems.isNotEmpty()) {
+                            item {
+                                Text(
+                                    text = stringResource(R.string.media_section_list),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = Spacing.TightSpacing),
+                                )
+                            }
+                        }
+
+                        items(
+                            items = state.mediaItems,
+                            key = { m -> "${m.origin}\u0000${m.mediaId}" },
+                        ) { mediaItem ->
+                            val selected = mediaItem.stableKey() in state.selectedKeys
+                            MediaListItemCard(
+                                item = mediaItem,
+                                selected = selected,
+                                onClick = { viewModel.toggleSelection(mediaItem) },
+                                onLongClick = { onMediaClick(mediaItem.origin, mediaItem.mediaId) },
                             )
                         }
+
+                        if (state.mediaItems.isEmpty()) {
+                            item {
+                                Surface(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(12.dp)),
+                                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.45f),
+                                ) {
+                                    val emptyMessage = when {
+                                        filterRoomId != null || filterUserId != null -> stringResource(R.string.no_media_found)
+                                        state.selectedRoomId == null && state.selectedUserId == null ->
+                                            stringResource(R.string.select_room_or_user_to_list_media)
+                                        else -> stringResource(R.string.no_media_found)
+                                    }
+                                    Text(
+                                        emptyMessage,
+                                        modifier = Modifier
+                                            .padding(Spacing.FieldSpacing)
+                                            .testTag("media_list_empty"),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
                     }
-                }
                 }
             }
         }
     }
 
-    if (showBulkDeleteDialog) {
-        BulkDeleteDialog(
-            onDismiss = { showBulkDeleteDialog = false },
-            onConfirm = { days, sizeGt, keepProfiles ->
-                showBulkDeleteDialog = false
-                val beforeTs = System.currentTimeMillis() - (days * 86_400_000L)
-                viewModel.bulkDeleteMedia(beforeTs, sizeGt, keepProfiles)
+    if (showUserScopedDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showUserScopedDeleteDialog = false },
+            title = { Text(stringResource(R.string.media_delete_user_confirm_title)) },
+            text = { Text(stringResource(R.string.media_delete_user_confirm_body)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showUserScopedDeleteDialog = false
+                        viewModel.bulkDeleteUserScopedMedia()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                ) { Text(stringResource(R.string.delete)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUserScopedDeleteDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
             },
         )
     }
 
-    if (showPurgeDialog) {
-        PurgeRemoteCacheDialog(
-            onDismiss = { showPurgeDialog = false },
-            onConfirm = { days ->
-                showPurgeDialog = false
-                val beforeTs = System.currentTimeMillis() - (days * 86_400_000L)
-                viewModel.purgeRemoteMediaCache(beforeTs)
+    if (showRoomScopedDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showRoomScopedDeleteDialog = false },
+            title = { Text(stringResource(R.string.media_delete_room_confirm_title)) },
+            text = { Text(stringResource(R.string.media_delete_room_confirm_body)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showRoomScopedDeleteDialog = false
+                        viewModel.bulkDeleteRoomScopedMedia()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                ) { Text(stringResource(R.string.delete)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRoomScopedDeleteDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
             },
         )
     }
 }
 
 @Composable
-private fun BulkDeleteDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (days: Long, sizeGt: Long?, keepProfiles: Boolean) -> Unit,
+private fun MediaListItemCard(
+    item: MediaListItem,
+    selected: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
 ) {
-    var daysText by remember { mutableStateOf("30") }
-    var sizeText by remember { mutableStateOf("") }
-    var keepProfiles by remember { mutableStateOf(true) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.bulk_delete_local_media_title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.bulk_delete_local_media_message))
-                OutlinedTextField(
-                    value = daysText,
-                    onValueChange = { daysText = it },
-                    label = { Text(stringResource(R.string.days_old)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+    val container = when {
+        selected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.42f)
+        else -> MaterialTheme.colorScheme.surfaceContainerHigh
+    }
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick,
+            )
+            .testTag("media_row_${item.mediaId}"),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = container),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = Spacing.FieldSpacing, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = item.mediaId,
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
                 )
-                OutlinedTextField(
-                    value = sizeText,
-                    onValueChange = { sizeText = it },
-                    label = { Text(stringResource(R.string.min_size_optional)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = keepProfiles, onCheckedChange = { keepProfiles = it })
-                    Text(stringResource(R.string.keep_profile_media))
+                if (selected) {
+                    Icon(
+                        imageVector = Icons.Filled.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
                 }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val days = daysText.toLongOrNull() ?: return@Button
-                    val size = sizeText.toLongOrNull()
-                    onConfirm(days, size, keepProfiles)
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-            ) { Text(stringResource(R.string.delete)) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
-}
-
-@Composable
-private fun PurgeRemoteCacheDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (days: Long) -> Unit,
-) {
-    var daysText by remember { mutableStateOf("30") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.purge_remote_media_title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.purge_remote_media_message))
-                OutlinedTextField(
-                    value = daysText,
-                    onValueChange = { daysText = it },
-                    label = { Text(stringResource(R.string.days_old)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.TightSpacing),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val pillColor = if (item.isLocal) {
+                    MaterialTheme.colorScheme.secondaryContainer
+                } else {
+                    MaterialTheme.colorScheme.tertiaryContainer
+                }
+                val pillOnColor = if (item.isLocal) {
+                    MaterialTheme.colorScheme.onSecondaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onTertiaryContainer
+                }
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = pillColor,
+                ) {
+                    Text(
+                        text = if (item.isLocal) {
+                            stringResource(R.string.media_local)
+                        } else {
+                            stringResource(R.string.media_remote)
+                        },
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = pillOnColor,
+                    )
+                }
+                Text(
+                    text = item.origin,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
                 )
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = { daysText.toLongOrNull()?.let { onConfirm(it) } },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-            ) { Text(stringResource(R.string.purge)) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -276,7 +491,7 @@ private fun RoomDropdown(
             label = { Text(stringResource(R.string.room)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
-                .menuAnchor()
+                .menuAnchor(type = MenuAnchorType.PrimaryEditable)
                 .fillMaxWidth(),
         )
         ExposedDropdownMenu(
@@ -326,7 +541,7 @@ private fun UserDropdown(
             label = { Text(stringResource(R.string.user)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
-                .menuAnchor()
+                .menuAnchor(type = MenuAnchorType.PrimaryEditable)
                 .fillMaxWidth(),
         )
         ExposedDropdownMenu(

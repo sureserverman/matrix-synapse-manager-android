@@ -1,17 +1,13 @@
 package com.matrix.synapse.feature.media.ui
 
 import app.cash.turbine.test
-import com.matrix.synapse.database.AuditAction
 import com.matrix.synapse.database.AuditLogger
 import com.matrix.synapse.feature.media.data.MediaRepository
 import com.matrix.synapse.feature.media.data.RoomMediaResponse
-import com.matrix.synapse.feature.media.data.DeleteMediaResponse
-import com.matrix.synapse.feature.media.data.PurgeMediaCacheResponse
 import com.matrix.synapse.feature.rooms.data.RoomListResponse
 import com.matrix.synapse.feature.rooms.data.RoomRepository
 import com.matrix.synapse.feature.servers.data.ServerRepository
 import com.matrix.synapse.feature.users.data.UserRepository
-import com.matrix.synapse.feature.users.data.UsersListResponse
 import io.mockk.*
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +29,7 @@ class MediaListViewModelTest {
 
     private fun createVm(): MediaListViewModel {
         coEvery { roomRepository.listRooms(any(), any(), any(), any(), any()) } returns RoomListResponse(rooms = emptyList())
-        coEvery { userRepository.listUsers(any(), any(), any(), any()) } returns UsersListResponse(users = emptyList())
+        coEvery { userRepository.listUsersForMediaFilters(any(), any()) } returns emptyList()
         every { serverRepository.getServerById(any()) } returns flowOf(null)
         return MediaListViewModel(mediaRepository, roomRepository, userRepository, auditLogger, serverRepository)
     }
@@ -44,7 +40,8 @@ class MediaListViewModelTest {
     @Test
     fun `loadRoomMedia populates media items`() = runTest {
         coEvery { mediaRepository.listRoomMedia(any(), any()) } returns RoomMediaResponse(
-            local = listOf("abc123", "def456"), remote = listOf("ghi789"),
+            local = listOf("mxc://example.com/abc123", "mxc://example.com/def456"),
+            remote = listOf("mxc://matrix.org/ghi789"),
         )
         val vm = createVm()
         vm.state.test {
@@ -52,34 +49,12 @@ class MediaListViewModelTest {
             val state = expectMostRecentItem()
             assertFalse(state.isLoading)
             assertEquals(3, state.mediaItems.size)
+            assertEquals("example.com", state.mediaItems[0].origin)
+            assertEquals("abc123", state.mediaItems[0].mediaId)
+            assertEquals("matrix.org", state.mediaItems[2].origin)
+            assertEquals("ghi789", state.mediaItems[2].mediaId)
             assertTrue(state.mediaItems[0].isLocal)
             assertFalse(state.mediaItems[2].isLocal)
-        }
-    }
-
-    @Test
-    fun `bulkDeleteMedia reports count and logs audit`() = runTest {
-        coEvery { mediaRepository.bulkDeleteMedia(any(), any(), any(), any()) } returns DeleteMediaResponse(deletedMedia = listOf("a", "b"), total = 2)
-        val vm = createVm()
-        vm.init("https://example.com", "srv1", null, null)
-        vm.state.test {
-            vm.bulkDeleteMedia(beforeTs = 1000L, sizeGt = null, keepProfiles = null)
-            val state = expectMostRecentItem()
-            assertEquals("Deleted 2 media items", state.actionMessage)
-            coVerify { auditLogger.insert(match { it.action == AuditAction.BULK_DELETE_MEDIA }) }
-        }
-    }
-
-    @Test
-    fun `purgeRemoteMediaCache reports count and logs audit`() = runTest {
-        coEvery { mediaRepository.purgeRemoteMediaCache(any(), any()) } returns PurgeMediaCacheResponse(deleted = 5)
-        val vm = createVm()
-        vm.init("https://example.com", "srv1", null, null)
-        vm.state.test {
-            vm.purgeRemoteMediaCache(beforeTs = 1000L)
-            val state = expectMostRecentItem()
-            assertEquals("Purged 5 remote media items", state.actionMessage)
-            coVerify { auditLogger.insert(match { it.action == AuditAction.PURGE_REMOTE_MEDIA_CACHE }) }
         }
     }
 
