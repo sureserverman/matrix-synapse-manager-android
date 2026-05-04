@@ -82,4 +82,32 @@ class MasDiscoveryServiceTest {
 
         assertTrue("Expected NetworkError result", result is MasDiscoveryResult.NetworkError)
     }
+
+    /** Regression: a server that returns an HTML 404 page (or any non-JSON body)
+     *  for `/.well-known/matrix/client` must NOT crash the app — per MSC2965 a
+     *  malformed well-known is equivalent to no well-known, i.e. legacy password
+     *  auth. */
+    @Test
+    fun returns_NotMas_when_well_known_body_is_html() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "text/html")
+                .setBody("<!doctype html><html><body>404 Not Found</body></html>"),
+        )
+
+        val baseUrl = server.url("/").toString().trimEnd('/')
+        val result = service.discover(baseUrl)
+
+        assertTrue("Expected NotMas result", result is MasDiscoveryResult.NotMas)
+    }
+
+    @Test
+    fun returns_NotMas_when_well_known_body_is_empty() = runTest {
+        server.enqueue(MockResponse().setBody(""))
+
+        val baseUrl = server.url("/").toString().trimEnd('/')
+        val result = service.discover(baseUrl)
+
+        assertTrue("Expected NotMas result", result is MasDiscoveryResult.NotMas)
+    }
 }

@@ -3,6 +3,7 @@ package com.matrix.synapse.feature.servers.domain
 import com.matrix.synapse.feature.servers.data.WellKnownApi
 import com.matrix.synapse.model.Server
 import com.matrix.synapse.network.RetrofitFactory
+import kotlinx.serialization.SerializationException
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
@@ -38,6 +39,12 @@ class DiscoverServerUseCase @Inject constructor(
             }
         } catch (e: IOException) {
             Result.failure(e)
+        } catch (e: SerializationException) {
+            // Well-known body wasn't valid JSON — treat as missing well-known
+            // and fall back to the input URL itself.
+            Result.success(DiscoveredServer(inputUrl = normalizedUrl, homeserverUrl = normalizedUrl))
+        } catch (e: IllegalArgumentException) {
+            Result.success(DiscoveredServer(inputUrl = normalizedUrl, homeserverUrl = normalizedUrl))
         }
     }
 
