@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- App -->
     <string name="app_name">Matrix Synapse Manager</string>
 
@@ -19,7 +19,8 @@
     <string name="username">Username</string>
     <string name="password">Password</string>
     <string name="sign_in">Sign In</string>
-    <string name="login_error_admin_scope_denied">Logged in, but this account doesn\'t have Synapse admin scope on this homeserver. Ask your operator to run `mas-cli manage set-can-request-admin &lt;user&gt; --admin`, then retry.</string>
+    <!-- Translation deferred: the message includes a verbatim CLI command that should not be localized in flight. Tracked for follow-up. -->
+    <string name="login_error_admin_scope_denied" tools:ignore="MissingTranslation">Logged in, but this account doesn\'t have Synapse admin scope on this homeserver. Ask your operator to run `mas-cli manage set-can-request-admin &lt;user&gt; --admin`, then retry.</string>
 
     <!-- Servers -->
     <string name="servers">Servers</string>
