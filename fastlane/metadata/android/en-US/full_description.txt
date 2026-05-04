@@ -14,3 +14,4 @@ Features:
 • Server dashboard — Version, metrics, background jobs (pause/resume, etc.)
 • Moderation — Event reports list and dismiss
 • App lock — Optional PIN gate on app resume
+• Launcher — Adaptive icon with monochrome layer for Material You home screens
