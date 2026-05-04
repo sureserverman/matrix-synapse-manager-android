@@ -22,6 +22,7 @@ mockk = "1.13.12"
 turbine = "1.1.0"
 kotlinx-serialization = "1.7.3"
 work-runtime = "2.9.1"
+appauth = "0.11.1"
 
 [libraries]
 # Kotlin
@@ -53,6 +54,9 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 
 # AndroidX extras
 work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work-runtime" }
+
+# OAuth (AppAuth-Android — handles MSC3861/MAS auth-code + PKCE)
+appauth = { module = "net.openid:appauth", version.ref = "appauth" }
 
 # Compose
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }

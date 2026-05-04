@@ -60,6 +60,9 @@ dependencies {
 
     implementation(libs.coroutines.android)
 
+    // OAuth — MSC3861 / MAS auth-code + PKCE
+    implementation(libs.appauth)
+
     testImplementation(libs.bundles.unit.test)
     testImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(libs.junit.ext)
