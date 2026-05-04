@@ -28,6 +28,7 @@ android {
 
 dependencies {
     api(project(":core:model"))
+    implementation(project(":core:security"))
 
     // Hilt
     implementation(libs.hilt.android)
