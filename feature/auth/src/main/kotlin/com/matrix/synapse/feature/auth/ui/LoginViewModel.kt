@@ -28,19 +28,19 @@ sealed interface LoginState {
 }
 
 @HiltViewModel
-class LoginViewModel @Inject constructor(
+open class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
     private val resolver: LoginStrategyResolver,
     private val oauthLoginUseCase: OAuthLoginUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<LoginState>(LoginState.Idle)
-    val state: StateFlow<LoginState> = _state.asStateFlow()
+    open val state: StateFlow<LoginState> = _state.asStateFlow()
 
     private var pendingOauth: PendingOauth? = null
 
     /** Resolves the login strategy for [serverUrl] and transitions to the appropriate state. */
-    fun startLogin(serverUrl: String, serverId: String) {
+    open fun startLogin(serverUrl: String, serverId: String) {
         viewModelScope.launch {
             _state.value = LoginState.Loading
             when (val strategy = resolver.resolve(serverUrl)) {

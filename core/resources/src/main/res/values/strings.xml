@@ -19,6 +19,7 @@
     <string name="username">Username</string>
     <string name="password">Password</string>
     <string name="sign_in">Sign In</string>
+    <string name="login_error_admin_scope_denied">Logged in, but this account doesn\'t have Synapse admin scope on this homeserver. Ask your operator to run `mas-cli manage set-can-request-admin &lt;user&gt; --admin`, then retry.</string>
 
     <!-- Servers -->
     <string name="servers">Servers</string>

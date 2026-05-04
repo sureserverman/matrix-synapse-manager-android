@@ -65,6 +65,7 @@ dependencies {
 
     testImplementation(libs.bundles.unit.test)
     testImplementation(libs.okhttp.mockwebserver)
-    androidTestImplementation(libs.junit.ext)
-    androidTestImplementation(libs.test.runner)
+    androidTestImplementation(libs.bundles.android.test)
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestDebugImplementation(libs.compose.ui.test.manifest)
 }
