@@ -58,10 +58,40 @@ class TokenStoreImpl @Inject constructor(
         prefs.edit()
             .remove(accessKey(serverId))
             .remove(userIdKey(serverId))
+            .remove(refreshKey(serverId))
+            .remove(oauthClientKey(serverId))
+            .remove(issuedAtKey(serverId))
             .apply()
+        _state.value = Unit
+    }
+
+    override fun refreshTokenFlow(serverId: String): Flow<String?> =
+        _state.map { prefs.getString(refreshKey(serverId), null) }
+
+    override suspend fun saveRefreshToken(serverId: String, token: String) {
+        prefs.edit().putString(refreshKey(serverId), token).apply()
+        _state.value = Unit
+    }
+
+    override fun oauthClientIdFlow(serverId: String): Flow<String?> =
+        _state.map { prefs.getString(oauthClientKey(serverId), null) }
+
+    override suspend fun saveOAuthClientId(serverId: String, clientId: String) {
+        prefs.edit().putString(oauthClientKey(serverId), clientId).apply()
+        _state.value = Unit
+    }
+
+    override fun tokenIssuedAtFlow(serverId: String): Flow<Long?> =
+        _state.map { if (prefs.contains(issuedAtKey(serverId))) prefs.getLong(issuedAtKey(serverId), 0L) else null }
+
+    override suspend fun saveTokenIssuedAt(serverId: String, epochSeconds: Long) {
+        prefs.edit().putLong(issuedAtKey(serverId), epochSeconds).apply()
         _state.value = Unit
     }
 
     private fun accessKey(serverId: String) = "access_$serverId"
     private fun userIdKey(serverId: String) = "user_$serverId"
+    private fun refreshKey(serverId: String) = "refresh_$serverId"
+    private fun oauthClientKey(serverId: String) = "oauth_client_$serverId"
+    private fun issuedAtKey(serverId: String) = "issued_at_$serverId"
 }

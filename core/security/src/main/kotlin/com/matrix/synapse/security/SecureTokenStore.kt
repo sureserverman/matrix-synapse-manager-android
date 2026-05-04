@@ -24,4 +24,22 @@ interface SecureTokenStore {
 
     /** Removes all stored tokens and user ID for [serverId]. */
     suspend fun clearTokens(serverId: String)
+
+    /** Emits the current OAuth refresh token for [serverId], or null if none stored. */
+    fun refreshTokenFlow(serverId: String): Flow<String?>
+
+    /** Persists the refresh [token] for [serverId]. */
+    suspend fun saveRefreshToken(serverId: String, token: String)
+
+    /** Emits the registered MAS OAuth client_id for [serverId], or null if not registered. */
+    fun oauthClientIdFlow(serverId: String): Flow<String?>
+
+    /** Persists the OAuth [clientId] for [serverId]. */
+    suspend fun saveOAuthClientId(serverId: String, clientId: String)
+
+    /** Emits the access-token issued-at epoch-seconds for [serverId], or null if unknown. */
+    fun tokenIssuedAtFlow(serverId: String): Flow<Long?>
+
+    /** Persists the issued-at [epochSeconds] timestamp for [serverId]. */
+    suspend fun saveTokenIssuedAt(serverId: String, epochSeconds: Long)
 }
