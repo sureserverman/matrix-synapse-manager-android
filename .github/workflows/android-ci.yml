@@ -129,6 +129,44 @@ jobs:
           sudo apt-get install -y diffoscope
           diffoscope /tmp/first.apk app/build/outputs/apk/release/app-release-unsigned.apk || true
 
+  mas-tests:
+    name: MAS / OAuth tests
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run MAS unit tests
+        run: |
+          ./gradlew \
+            :core:network:testDebugUnitTest --tests "com.matrix.synapse.network.auth.*" \
+            :feature:auth:testDebugUnitTest --tests "com.matrix.synapse.feature.auth.oauth.*" \
+            :feature:auth:testDebugUnitTest --tests "com.matrix.synapse.feature.auth.domain.LoginStrategyResolverTest" \
+            :feature:auth:testDebugUnitTest --tests "com.matrix.synapse.feature.auth.domain.LogoutUseCaseTest" \
+            :feature:auth:testDebugUnitTest --tests "com.matrix.synapse.feature.auth.ui.LoginViewModelOAuthTest"
+
+      - name: Upload MAS test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mas-test-results
+          path: '**/build/reports/tests/testDebugUnitTest/'
+
   instrumented-tests:
     name: Instrumented Tests (API 29)
     runs-on: ubuntu-latest
