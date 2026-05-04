@@ -1,64 +1,71 @@
 package com.matrix.synapse.feature.rooms.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
-import com.matrix.synapse.core.resources.R
-import androidx.compose.ui.input.pointer.pointerInput
-import com.matrix.synapse.core.ui.EmptyStateContent
-import com.matrix.synapse.core.ui.Spacing
-import com.matrix.synapse.core.ui.SynapseTopBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
+import com.matrix.synapse.core.resources.R
+import com.matrix.synapse.core.ui.Spacing
+import com.matrix.synapse.core.ui.SynapseTopBar
+import com.matrix.synapse.core.ui.components.SectionHeader
+import com.matrix.synapse.core.ui.components.StatusChip
+import com.matrix.synapse.core.ui.components.StatusTone
+import com.matrix.synapse.core.ui.components.SynapseButton
+import com.matrix.synapse.core.ui.components.SynapseButtonVariant
+import com.matrix.synapse.core.ui.components.SynapseEmptyState
+import com.matrix.synapse.core.ui.components.SynapseListItem
+import com.matrix.synapse.core.ui.components.SynapseScaffold
+import com.matrix.synapse.core.ui.theme.SynapseText
+import com.matrix.synapse.core.ui.theme.SynapseTheme
+import com.matrix.synapse.core.ui.theme.Tokens
 import com.matrix.synapse.feature.rooms.data.RoomSummary
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -89,32 +96,37 @@ fun RoomListScreen(
             onDismissRequest = { showDeleteRoomsDialog = false },
             title = { Text(stringResource(R.string.delete_rooms_title)) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.Md)) {
                     Text(
                         stringResource(R.string.delete_rooms_message, state.selectedRoomIds.size),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = SynapseText.BodyM,
                     )
-                    OutlinedButton(
+                    SynapseButton(
+                        text = stringResource(R.string.delete),
                         onClick = {
                             viewModel.deleteSelectedRooms(purge = false)
                             showDeleteRoomsDialog = false
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        variant = SynapseButtonVariant.Outline,
                         enabled = !state.isDeleting,
-                    ) { Text(stringResource(R.string.delete)) }
-                    OutlinedButton(
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    SynapseButton(
+                        text = stringResource(R.string.delete_with_media),
                         onClick = {
                             viewModel.deleteSelectedRooms(purge = true)
                             showDeleteRoomsDialog = false
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        variant = SynapseButtonVariant.Danger,
                         enabled = !state.isDeleting,
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                    ) { Text(stringResource(R.string.delete_with_media)) }
-                    TextButton(
-                        onClick = { showDeleteRoomsDialog = false },
                         modifier = Modifier.fillMaxWidth(),
-                    ) { Text(stringResource(R.string.cancel)) }
+                    )
+                    SynapseButton(
+                        text = stringResource(R.string.cancel),
+                        onClick = { showDeleteRoomsDialog = false },
+                        variant = SynapseButtonVariant.Ghost,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
             },
             confirmButton = { },
@@ -122,7 +134,7 @@ fun RoomListScreen(
         )
     }
 
-    Scaffold(
+    SynapseScaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             SynapseTopBar(
@@ -150,7 +162,16 @@ fun RoomListScreen(
                         ) {
                             Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete_selected_rooms))
                         }
-                        TextButton(onClick = { viewModel.exitSelectionMode() }) { Text(stringResource(R.string.cancel)) }
+                        TextButton(onClick = { viewModel.exitSelectionMode() }) {
+                            Text(stringResource(R.string.cancel))
+                        }
+                    } else {
+                        IconButton(onClick = {}) {
+                            Icon(Icons.Filled.Search, contentDescription = null)
+                        }
+                        IconButton(onClick = {}) {
+                            Icon(Icons.Filled.Menu, contentDescription = null)
+                        }
                     }
                 },
             )
@@ -164,7 +185,7 @@ fun RoomListScreen(
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 12.dp)
+                    .padding(horizontal = Tokens.Space.ScreenEdge, vertical = Tokens.Space.Md)
                     .testTag("room_search"),
             )
             RoomSortDropdown(
@@ -173,7 +194,7 @@ fun RoomListScreen(
                 onSortChange = { orderBy, dir -> viewModel.setSort(orderBy, dir) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 4.dp)
+                    .padding(horizontal = Tokens.Space.ScreenEdge, vertical = Tokens.Space.Xs)
                     .testTag("room_sort"),
             )
             when {
@@ -184,7 +205,8 @@ fun RoomListScreen(
 
                 state.error != null -> Text(
                     text = state.error!!,
-                    color = MaterialTheme.colorScheme.error,
+                    color = SynapseTheme.colors.danger,
+                    style = SynapseText.BodyM,
                     modifier = Modifier
                         .padding(Spacing.ScreenPadding)
                         .testTag("room_list_error"),
@@ -195,9 +217,10 @@ fun RoomListScreen(
                     onRefresh = { viewModel.refresh() },
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    EmptyStateContent(
+                    SynapseEmptyState(
                         title = stringResource(R.string.no_rooms),
                         body = stringResource(R.string.no_rooms_body),
+                        icon = Icons.Filled.Home,
                         modifier = Modifier.testTag("room_list_empty"),
                     )
                 }
@@ -234,6 +257,7 @@ private fun RoomSortDropdown(
     onSortChange: (orderBy: String, dir: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val c = SynapseTheme.colors
     var expanded by remember { mutableStateOf(false) }
     val labelResId = remember(sortBy, sortDir) {
         when (sortBy) {
@@ -255,19 +279,19 @@ private fun RoomSortDropdown(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     stringResource(R.string.sort_by),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = SynapseText.Caption,
+                    color = c.textMuted,
                 )
                 Text(
                     stringResource(labelResId),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    style = SynapseText.BodyM,
+                    color = c.text,
                 )
             }
             Icon(
                 Icons.Filled.ArrowDropDown,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = c.textMuted,
             )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -320,7 +344,7 @@ private fun RoomList(
                         .clickable {
                             if (allLoadedSelected) onClearSelection() else onSelectAll()
                         }
-                        .padding(horizontal = Spacing.ScreenPadding, vertical = 12.dp),
+                        .padding(horizontal = Spacing.ScreenPadding, vertical = Tokens.Space.Md),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.TightSpacing),
                 ) {
@@ -329,14 +353,14 @@ private fun RoomList(
                         onCheckedChange = { if (it) onSelectAll() else onClearSelection() },
                         modifier = Modifier.testTag("room_select_all"),
                     )
-                    Text(stringResource(R.string.select_all), style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.select_all), style = SynapseText.BodyM)
                 }
+                HorizontalDivider(color = SynapseTheme.colors.line, thickness = 1.dp)
             }
         }
         items(rooms, key = { it.roomId }) { room ->
             RoomRow(
                 room = room,
-                avatarUrl = roomAvatarUrls[room.roomId],
                 selectionMode = selectionMode,
                 selected = room.roomId in selectedRoomIds,
                 onClick = { onRoomClick(room.roomId) },
@@ -347,7 +371,9 @@ private fun RoomList(
         if (isLoadingMore) {
             item {
                 Box(
-                    modifier = Modifier.fillMaxWidth().padding(Spacing.FieldSpacing),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(Spacing.FieldSpacing),
                     contentAlignment = Alignment.Center,
                 ) { CircularProgressIndicator(modifier = Modifier.size(24.dp)) }
             }
@@ -358,59 +384,69 @@ private fun RoomList(
 @Composable
 private fun RoomRow(
     room: RoomSummary,
-    avatarUrl: String?,
     selectionMode: Boolean,
     selected: Boolean,
     onClick: () -> Unit,
     onLongPress: () -> Unit,
     onToggleSelection: () -> Unit,
 ) {
-    ListItem(
-        leadingContent = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                if (selectionMode) {
-                    Checkbox(
-                        checked = selected,
-                        onCheckedChange = { onToggleSelection() },
-                        modifier = Modifier.testTag("room_checkbox_${room.roomId}"),
+    val c = SynapseTheme.colors
+    val isBlocked = room.joinRules?.lowercase() == "knock_restricted" || room.joinRules?.lowercase() == "private"
+    val isInviteOnly = room.joinRules?.lowercase() == "invite"
+
+    SynapseListItem(
+        headline = room.name ?: room.roomId,
+        supporting = "${room.roomId} · ${room.joinedMembers}",
+        supportingMono = true,
+        selected = selected,
+        leading = {
+            if (selectionMode) {
+                Checkbox(
+                    checked = selected,
+                    onCheckedChange = { onToggleSelection() },
+                    modifier = Modifier.testTag("room_checkbox_${room.roomId}"),
+                )
+            } else {
+                when {
+                    isBlocked -> Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = null,
+                        tint = c.textMuted,
+                        modifier = Modifier.size(20.dp),
                     )
-                }
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (avatarUrl != null) {
-                        AsyncImage(
-                            model = avatarUrl,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(CircleShape),
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Filled.Home,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    isInviteOnly -> Icon(
+                        imageVector = Icons.Filled.Lock,
+                        contentDescription = null,
+                        tint = c.textMuted,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    else -> Text(
+                        text = "#",
+                        style = SynapseText.Title,
+                        color = c.textMuted,
+                    )
                 }
             }
         },
-        headlineContent = { Text(room.name ?: room.roomId) },
-        supportingContent = {
-            Text(stringResource(R.string.members_format, room.joinedMembers) + if (room.encryption != null) stringResource(R.string.encrypted_suffix) else "")
+        trailing = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Tokens.Space.Xs),
+            ) {
+                if (room.encryption != null) {
+                    Icon(
+                        imageVector = Icons.Filled.Lock,
+                        contentDescription = null,
+                        tint = c.textMuted,
+                        modifier = Modifier.size(12.dp),
+                    )
+                }
+                val (chipLabel, chipTone) = joinRuleChip(room.joinRules)
+                StatusChip(text = chipLabel, tone = chipTone)
+            }
         },
-        trailingContent = {
-            if (room.canonicalAlias != null) Text(room.canonicalAlias, style = MaterialTheme.typography.bodySmall)
-        },
+        onClick = if (selectionMode) onToggleSelection else onClick,
+        onLongClick = onLongPress,
         modifier = Modifier
             .pointerInput(selectionMode, room.roomId) {
                 detectTapGestures(
@@ -420,4 +456,14 @@ private fun RoomRow(
             }
             .testTag("room_row_${room.roomId}"),
     )
+}
+
+private fun joinRuleChip(joinRules: String?): Pair<String, StatusTone> = when (joinRules?.lowercase()) {
+    "public"       -> "Public"    to StatusTone.Success
+    "invite"       -> "Invite"    to StatusTone.Info
+    "knock"        -> "Knock"     to StatusTone.Warn
+    "restricted"   -> "Restricted" to StatusTone.Accent
+    "knock_restricted" -> "Restricted" to StatusTone.Accent
+    null           -> "Unknown"   to StatusTone.Neutral
+    else           -> joinRules   to StatusTone.Neutral
 }

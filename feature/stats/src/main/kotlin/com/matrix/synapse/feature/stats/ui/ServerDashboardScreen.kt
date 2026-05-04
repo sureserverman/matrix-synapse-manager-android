@@ -1,38 +1,56 @@
 package com.matrix.synapse.feature.stats.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import com.matrix.synapse.core.ui.SynapseTopBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import com.matrix.synapse.core.resources.R
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.matrix.synapse.core.resources.R
+import com.matrix.synapse.core.ui.SynapseTopBar
+import com.matrix.synapse.core.ui.components.KpiTile
+import com.matrix.synapse.core.ui.components.SectionHeader
+import com.matrix.synapse.core.ui.components.StatusChip
+import com.matrix.synapse.core.ui.components.StatusTone
+import com.matrix.synapse.core.ui.components.SynapseCard
+import com.matrix.synapse.core.ui.components.SynapseEmptyState
+import com.matrix.synapse.core.ui.components.SynapseListItem
+import com.matrix.synapse.core.ui.components.SynapseScaffold
+import com.matrix.synapse.core.ui.theme.SynapseText
+import com.matrix.synapse.core.ui.theme.SynapseTheme
+import com.matrix.synapse.core.ui.theme.Tokens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,195 +69,260 @@ fun ServerDashboardScreen(
     LaunchedEffect(serverId, serverUrl) { viewModel.loadDashboard(serverId, serverUrl) }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    Scaffold(
+    val serverDisplayName = state.currentServer?.displayName ?: serverUrl
+
+    SynapseScaffold(
         topBar = {
             SynapseTopBar(
-                title = state.currentServer?.displayName ?: serverUrl,
+                title = serverDisplayName,
                 subtitle = serverUrl,
                 onTitleClick = onServers,
                 onBack = onBack,
-                titleCentered = true,
+                actions = {
+                    IconButton(onClick = { viewModel.loadDashboard(serverId, serverUrl) }) {
+                        Icon(
+                            imageVector = Icons.Filled.Refresh,
+                            contentDescription = null,
+                            tint = SynapseTheme.colors.textMuted,
+                        )
+                    }
+                    IconButton(onClick = {}) {
+                        Icon(
+                            imageVector = Icons.Filled.MoreVert,
+                            contentDescription = null,
+                            tint = SynapseTheme.colors.textMuted,
+                        )
+                    }
+                },
             )
         },
     ) { padding ->
         when {
-            state.isLoading && state.serverVersion == null -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+            state.isLoading && state.serverVersion == null -> Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(color = SynapseTheme.colors.accent)
             }
 
-            state.error != null -> Text(
-                state.error!!,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(padding).padding(24.dp),
+            state.error != null -> SynapseEmptyState(
+                title = state.error!!,
+                icon = Icons.Filled.Warning,
+                errorTone = true,
+                actionLabel = stringResource(R.string.loading),
+                onAction = { viewModel.loadDashboard(serverId, serverUrl) },
+                modifier = Modifier.padding(padding),
             )
 
             else -> PullToRefreshBox(
                 isRefreshing = state.isLoading,
                 onRefresh = { viewModel.loadDashboard(serverId, serverUrl) },
-                modifier = Modifier.fillMaxSize().padding(padding),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
             ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(bottom = Tokens.Space.Xl),
                 ) {
-                    // Version
-                    item {
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(stringResource(R.string.server_version), style = MaterialTheme.typography.titleMedium)
-                                Text(state.serverVersion ?: "\u2014", style = MaterialTheme.typography.headlineSmall)
-                            }
-                        }
-                    }
-
-                    // Summary row (tappable → Users / Rooms)
-                    item {
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            StatCard(
+                    // ── OVERVIEW ──────────────────────────────────────────────────────
+                    SectionHeader(text = "OVERVIEW")
+                    Column(
+                        modifier = Modifier.padding(horizontal = Tokens.Space.ScreenEdge),
+                        verticalArrangement = Arrangement.spacedBy(Tokens.Space.Sm),
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.Sm)) {
+                            KpiTile(
                                 label = stringResource(R.string.total_users),
                                 value = state.totalUsers.toString(),
-                                modifier = Modifier.weight(1f),
-                                onClick = onUsersClick,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable(onClick = onUsersClick),
                             )
-                            StatCard(
+                            KpiTile(
                                 label = stringResource(R.string.total_rooms),
                                 value = state.totalRooms.toString(),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable(onClick = onRoomsClick),
+                            )
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.Sm)) {
+                            // Federation: show failing count if available, else "—"
+                            val federationFailures = state.federationFailures
+                            val federationValue = when {
+                                federationFailures != null && federationFailures > 0 ->
+                                    federationFailures.toString()
+                                else -> "—"
+                            }
+                            KpiTile(
+                                label = stringResource(R.string.federation),
+                                value = federationValue,
                                 modifier = Modifier.weight(1f),
-                                onClick = onRoomsClick,
+                            )
+                            // Storage: totalMediaBytes if available, else "—"
+                            KpiTile(
+                                label = stringResource(R.string.total_media_storage),
+                                value = state.totalMediaBytes?.let { formatBytes(it) } ?: "—",
+                                valueMono = false,
+                                modifier = Modifier.weight(1f),
                             )
                         }
                     }
 
-                    // Active users
-                    item {
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            StatCard("DAU (24h)", state.dau.toString(), Modifier.weight(1f))
-                            StatCard("MAU (30d)", state.mau.toString(), Modifier.weight(1f))
-                        }
-                    }
-
-                    // Total media storage
-                    item {
-                        StatCard(
-                            label = stringResource(R.string.total_media_storage),
-                            value = state.totalMediaBytes?.let { formatBytes(it) } ?: "\u2014",
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-
-                    // Federation
-                    item {
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(stringResource(R.string.federation), style = MaterialTheme.typography.titleMedium)
-                                val dest = state.federationDestinations
-                                val fail = state.federationFailures
-                                val text = when {
-                                    dest == null -> "\u2014"
-                                    fail != null && fail > 0 -> "$dest destinations ($fail failing)"
-                                    else -> "$dest destinations"
-                                }
-                                Text(text, style = MaterialTheme.typography.bodyLarge)
-                            }
-                        }
-                    }
-
-                    // Background updates
-                    item {
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(stringResource(R.string.background_updates), style = MaterialTheme.typography.titleMedium)
-                                val enabled = state.backgroundUpdatesEnabled
-                                val job = state.backgroundUpdatesJobName
-                                val text = when {
-                                    enabled == null -> "\u2014"
-                                    job != null && job.isNotBlank() -> "Running: $job"
-                                    else -> if (enabled) "Idle" else "Disabled"
-                                }
-                                Text(text, style = MaterialTheme.typography.bodyLarge)
-                            }
-                        }
-                    }
-
-                    // Open reports (tappable)
-                    item {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .then(
-                                    if (state.openEventReportsCount != null)
-                                        Modifier.clickable(onClick = onOpenReportsClick)
-                                    else Modifier
-                                ),
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(stringResource(R.string.open_reports), style = MaterialTheme.typography.titleMedium)
-                                Text(
-                                    state.openEventReportsCount?.toString() ?: "\u2014",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                )
-                            }
-                        }
-                    }
-
-                    // Top media users
-                item {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(stringResource(R.string.top_media_users), style = MaterialTheme.typography.titleMedium)
-                            if (state.topMediaUsers.isEmpty()) {
-                                Text(stringResource(R.string.no_data), style = MaterialTheme.typography.bodyMedium)
-                            }
-                        }
-                    }
-                }
-                items(state.topMediaUsers, key = { it.userId }) { user ->
-                    Row(
+                    // ── SYSTEM ────────────────────────────────────────────────────────
+                    SectionHeader(text = "SYSTEM")
+                    SynapseCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                            .clickable(onClick = { onTopMediaUserClick(user.userId) })
-                            .semantics {
-                                contentDescription = "${user.displayname ?: user.userId}, ${user.mediaCount} files"
-                            },
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                            .padding(horizontal = Tokens.Space.ScreenEdge),
+                        padding = 0.dp,
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(user.displayname ?: user.userId, style = MaterialTheme.typography.bodySmall)
-                            if (user.displayname != null) Text(user.userId, style = MaterialTheme.typography.labelSmall)
+                        Column {
+                            // Version row
+                            SynapseListItem(
+                                headline = stringResource(R.string.server_version),
+                                trailing = {
+                                    Text(
+                                        text = state.serverVersion ?: "—",
+                                        style = SynapseText.Mono,
+                                        color = SynapseTheme.colors.textMuted,
+                                    )
+                                },
+                                showDivider = true,
+                            )
+                            // DAU / MAU rows — exposed by the dashboard state
+                            SynapseListItem(
+                                headline = "DAU (24h)",
+                                trailing = {
+                                    Text(
+                                        text = state.dau.toString(),
+                                        style = SynapseText.Mono,
+                                        color = SynapseTheme.colors.textMuted,
+                                    )
+                                },
+                                showDivider = true,
+                            )
+                            SynapseListItem(
+                                headline = "MAU (30d)",
+                                trailing = {
+                                    Text(
+                                        text = state.mau.toString(),
+                                        style = SynapseText.Mono,
+                                        color = SynapseTheme.colors.textMuted,
+                                    )
+                                },
+                                // No open reports row below — showDivider false on last item
+                                showDivider = false,
+                            )
                         }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(stringResource(R.string.files_count, user.mediaCount), style = MaterialTheme.typography.bodySmall)
-                            Text(formatBytes(user.mediaLength), style = MaterialTheme.typography.bodySmall)
+                    }
+
+                    // ── TOP MEDIA USERS ───────────────────────────────────────────────
+                    SectionHeader(text = "TOP MEDIA USERS")
+                    SynapseCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Tokens.Space.ScreenEdge),
+                        padding = 0.dp,
+                    ) {
+                        Column {
+                            if (state.topMediaUsers.isEmpty()) {
+                                SynapseListItem(
+                                    headline = stringResource(R.string.no_data),
+                                    showDivider = false,
+                                )
+                            } else {
+                                val displayUsers = state.topMediaUsers.take(3)
+                                displayUsers.forEachIndexed { index, user ->
+                                    val initial = (user.displayname ?: user.userId)
+                                        .trimStart('@')
+                                        .firstOrNull()
+                                        ?.uppercaseChar()
+                                        ?.toString()
+                                        ?: "?"
+                                    SynapseListItem(
+                                        headline = user.displayname ?: user.userId,
+                                        supporting = if (user.displayname != null) user.userId else null,
+                                        supportingMono = true,
+                                        leading = {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(32.dp)
+                                                    .clip(CircleShape)
+                                                    .background(SynapseTheme.colors.surface3),
+                                                contentAlignment = Alignment.Center,
+                                            ) {
+                                                Text(
+                                                    text = initial,
+                                                    style = SynapseText.Caption,
+                                                    color = SynapseTheme.colors.textMuted,
+                                                )
+                                            }
+                                        },
+                                        trailing = {
+                                            StatusChip(
+                                                text = formatBytes(user.mediaLength),
+                                                tone = StatusTone.Neutral,
+                                            )
+                                        },
+                                        onClick = { onTopMediaUserClick(user.userId) },
+                                        showDivider = index < displayUsers.lastIndex,
+                                        modifier = Modifier.semantics {
+                                            contentDescription =
+                                                "${user.displayname ?: user.userId}, ${user.mediaCount} files"
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // ── BACKGROUND JOBS ───────────────────────────────────────────────
+                    // Only shown when backgroundUpdatesEnabled is not null
+                    if (state.backgroundUpdatesEnabled != null) {
+                        SectionHeader(text = "BACKGROUND JOBS")
+                        SynapseCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Tokens.Space.ScreenEdge),
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(Tokens.Space.Sm),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                val enabled = state.backgroundUpdatesEnabled
+                                val jobName = state.backgroundUpdatesJobName
+                                when {
+                                    jobName != null && jobName.isNotBlank() -> {
+                                        StatusChip(
+                                            text = "Running: $jobName",
+                                            tone = StatusTone.Success,
+                                            showDot = true,
+                                        )
+                                    }
+                                    enabled == true -> {
+                                        StatusChip(
+                                            text = "Idle",
+                                            tone = StatusTone.Neutral,
+                                        )
+                                    }
+                                    else -> {
+                                        StatusChip(
+                                            text = "Disabled",
+                                            tone = StatusTone.Warn,
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-                }
             }
-        }
-    }
-}
-
-@Composable
-private fun StatCard(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null,
-) {
-    Card(
-        modifier = modifier.then(
-            if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
-        ),
-    ) {
-        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text(label, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

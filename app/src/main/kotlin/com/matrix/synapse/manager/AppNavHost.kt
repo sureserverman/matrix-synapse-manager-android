@@ -361,6 +361,7 @@ fun AppNavHost(
         composable<AppLockSettings> {
             AppLockSettingsScreen(
                 onRearrangeTabs = { navController.navigate(RearrangeTabs) },
+                appVersion = com.matrix.synapse.manager.BuildConfig.VERSION_NAME,
             )
         }
 
@@ -464,6 +465,7 @@ fun AppNavHost(
         composable<Settings> {
             AppLockSettingsScreen(
                 onRearrangeTabs = { navController.navigate(RearrangeTabs) },
+                appVersion = com.matrix.synapse.manager.BuildConfig.VERSION_NAME,
             )
         }
 

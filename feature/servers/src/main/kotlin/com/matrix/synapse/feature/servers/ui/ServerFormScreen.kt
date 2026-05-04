@@ -8,16 +8,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import com.matrix.synapse.core.ui.SynapseTopBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,16 +21,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import com.matrix.synapse.core.resources.R
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-
-private val ScreenPadding = 24.dp
-private val FieldSpacing = 16.dp
-private val SectionSpacing = 24.dp
+import com.matrix.synapse.core.resources.R
+import com.matrix.synapse.core.ui.SynapseTopBar
+import com.matrix.synapse.core.ui.components.Field
+import com.matrix.synapse.core.ui.components.SynapseButton
+import com.matrix.synapse.core.ui.components.SynapseButtonSize
+import com.matrix.synapse.core.ui.components.SynapseScaffold
+import com.matrix.synapse.core.ui.theme.SynapseText
+import com.matrix.synapse.core.ui.theme.SynapseTheme
+import com.matrix.synapse.core.ui.theme.Tokens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,6 +45,7 @@ fun ServerFormScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val serverToEdit by viewModel.serverToEdit.collectAsStateWithLifecycle()
+    val c = SynapseTheme.colors
 
     var urlInput by remember { mutableStateOf("") }
     var displayName by remember { mutableStateOf("") }
@@ -74,68 +72,57 @@ fun ServerFormScreen(
 
     val isEditMode = serverIdToEdit != null
 
-    Scaffold(
+    SynapseScaffold(
         topBar = {
-            SynapseTopBar(title = if (isEditMode) stringResource(R.string.edit_server) else stringResource(R.string.add_server))
+            SynapseTopBar(
+                title = if (isEditMode) stringResource(R.string.edit_server)
+                else stringResource(R.string.add_server),
+            )
         },
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = ScreenPadding)
+                .padding(horizontal = Tokens.Space.ScreenEdge)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(FieldSpacing),
+            verticalArrangement = Arrangement.spacedBy(Tokens.Space.Lg),
         ) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Tokens.Space.Sm))
 
             Text(
                 text = stringResource(R.string.server_form_description),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = SynapseText.BodyM,
+                color = c.textMuted,
             )
 
-            Spacer(Modifier.height(SectionSpacing))
+            Spacer(Modifier.height(Tokens.Space.Sm))
 
-            OutlinedTextField(
+            Field(
                 value = urlInput,
                 onValueChange = { if (!isEditMode) urlInput = it },
-                label = { Text(stringResource(R.string.server_url)) },
-                placeholder = { Text(stringResource(R.string.server_url_placeholder)) },
-                singleLine = true,
+                label = stringResource(R.string.server_url),
+                placeholder = stringResource(R.string.server_url_placeholder),
                 enabled = !isEditMode,
-                readOnly = isEditMode,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Uri,
-                    capitalization = KeyboardCapitalization.None,
-                    autoCorrectEnabled = false,
-                ),
-                isError = state is ServerFormState.Error,
+                keyboardType = KeyboardType.Uri,
+                error = (state as? ServerFormState.Error)?.message,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("server_url_field"),
             )
 
-            OutlinedTextField(
+            Field(
                 value = displayName,
                 onValueChange = { displayName = it },
-                label = { Text(stringResource(R.string.display_name_optional)) },
-                singleLine = true,
+                label = stringResource(R.string.display_name_optional),
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            if (state is ServerFormState.Error) {
-                Text(
-                    text = (state as ServerFormState.Error).message,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.testTag("server_form_error"),
-                )
-            }
+            Spacer(Modifier.height(Tokens.Space.Sm))
 
-            Spacer(Modifier.height(SectionSpacing))
-
-            Button(
+            SynapseButton(
+                text = if (isEditMode) stringResource(R.string.save)
+                else stringResource(R.string.add_server),
                 onClick = {
                     if (isEditMode && serverIdToEdit != null) {
                         viewModel.updateServer(serverIdToEdit, displayName)
@@ -144,15 +131,17 @@ fun ServerFormScreen(
                     }
                 },
                 enabled = state !is ServerFormState.Discovering,
+                size = SynapseButtonSize.Lg,
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag(if (isEditMode) "save_server_button" else "add_server_button"),
-            ) {
-                if (state is ServerFormState.Discovering) {
-                    CircularProgressIndicator(modifier = Modifier.height(20.dp))
-                } else {
-                    Text(if (isEditMode) stringResource(R.string.save) else stringResource(R.string.add_server))
-                }
+            )
+
+            if (state is ServerFormState.Discovering) {
+                CircularProgressIndicator(
+                    color = c.accent,
+                    modifier = Modifier.height(20.dp),
+                )
             }
         }
     }

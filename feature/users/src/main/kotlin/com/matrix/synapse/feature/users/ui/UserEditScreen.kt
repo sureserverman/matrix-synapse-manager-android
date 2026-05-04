@@ -3,21 +3,13 @@ package com.matrix.synapse.feature.users.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import com.matrix.synapse.core.ui.SynapseTopBar
 import androidx.compose.runtime.Composable
@@ -32,10 +24,17 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import com.matrix.synapse.core.resources.R
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.matrix.synapse.core.ui.components.Field
+import com.matrix.synapse.core.ui.components.SynapseButton
+import com.matrix.synapse.core.ui.components.SynapseButtonSize
+import com.matrix.synapse.core.ui.components.SynapseButtonVariant
+import com.matrix.synapse.core.ui.components.SynapseScaffold
+import com.matrix.synapse.core.ui.components.SynapseToggle
+import com.matrix.synapse.core.ui.theme.SynapseText
+import com.matrix.synapse.core.ui.theme.SynapseTheme
+import com.matrix.synapse.core.ui.theme.Tokens
 
 /**
  * Screen for creating a new Synapse user.
@@ -68,7 +67,9 @@ fun UserEditScreen(
 
     val title = if (existingUserId == null) stringResource(R.string.create_user) else stringResource(R.string.edit_user)
     val serverName = state.serverName ?: remember(serverUrl) { serverNameFromUrl(serverUrl) }
-    Scaffold(
+    val c = SynapseTheme.colors
+
+    SynapseScaffold(
         topBar = {
             SynapseTopBar(title = title)
         },
@@ -77,76 +78,97 @@ fun UserEditScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 24.dp)
+                .padding(horizontal = Tokens.Space.ScreenEdge)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(Tokens.Space.Lg),
         ) {
-            Spacer(Modifier.height(8.dp))
+            // Top spacing
+            androidx.compose.foundation.layout.Spacer(
+                Modifier.padding(top = Tokens.Space.Sm),
+            )
 
             if (existingUserId == null) {
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it.filter { c -> c != '@' && c != ':' } },
-                    label = { Text(stringResource(R.string.username)) },
-                    supportingText = {
-                        val preview = username.trim()
-                        Text(if (preview.isNotBlank()) "@$preview:$serverName" else " ")
-                    },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().testTag("edit_user_id"),
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.Xs)) {
+                    Field(
+                        value = username,
+                        onValueChange = { username = it.filter { c -> c != '@' && c != ':' } },
+                        label = stringResource(R.string.username),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("edit_user_id"),
+                    )
+                    val preview = username.trim()
+                    Text(
+                        text = if (preview.isNotBlank()) "@$preview:$serverName" else " ",
+                        style = SynapseText.BodyS,
+                        color = c.textMuted,
+                        modifier = Modifier.padding(start = Tokens.Space.Sm),
+                    )
+                }
             } else {
-                OutlinedTextField(
+                Field(
                     value = existingUserId,
                     onValueChange = { },
-                    label = { Text(stringResource(R.string.user_id)) },
+                    label = stringResource(R.string.user_id),
                     enabled = false,
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth().testTag("edit_user_id"),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("edit_user_id"),
                 )
             }
 
-        if (existingUserId == null) {
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text(stringResource(R.string.password)) },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth().testTag("edit_password"),
+            if (existingUserId == null) {
+                Field(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = stringResource(R.string.password),
+                    isPassword = true,
+                    keyboardType = KeyboardType.Password,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("edit_password"),
+                )
+            }
+
+            Field(
+                value = displayName,
+                onValueChange = { displayName = it },
+                label = stringResource(R.string.display_name_optional),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("edit_display_name"),
             )
-        }
 
-        OutlinedTextField(
-            value = displayName,
-            onValueChange = { displayName = it },
-            label = { Text(stringResource(R.string.display_name_optional)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().testTag("edit_display_name"),
-        )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.server_admin),
+                    style = SynapseText.BodyM,
+                    color = c.text,
+                )
+                SynapseToggle(
+                    checked = isAdmin,
+                    onCheckedChange = { isAdmin = it },
+                    modifier = Modifier.testTag("edit_admin_checkbox"),
+                )
+            }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(
-                checked = isAdmin,
-                onCheckedChange = { isAdmin = it },
-                modifier = Modifier.testTag("edit_admin_checkbox"),
-            )
-            Text(stringResource(R.string.server_admin))
-        }
+            if (state.error != null) {
+                Text(
+                    text = state.error!!,
+                    style = SynapseText.BodyS,
+                    color = c.danger,
+                    modifier = Modifier.testTag("edit_error"),
+                )
+            }
 
-        if (state.error != null) {
-            Text(
-                text = state.error!!,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.testTag("edit_error"),
-            )
-        }
-
-            Spacer(Modifier.height(24.dp))
-
-            Button(
+            SynapseButton(
+                text = if (state.isSaving) "" else {
+                    if (existingUserId == null) stringResource(R.string.create) else stringResource(R.string.save)
+                },
                 onClick = {
                     if (existingUserId == null) {
                         val fullUserId = "@${username.trim()}:$serverName"
@@ -167,14 +189,23 @@ fun UserEditScreen(
                     }
                 },
                 enabled = !state.isSaving && (existingUserId != null || username.isNotBlank()),
-                modifier = Modifier.fillMaxWidth().testTag("edit_save_button"),
-            ) {
-                if (state.isSaving) {
-                    CircularProgressIndicator(modifier = Modifier.height(20.dp))
-                } else {
-                    Text(if (existingUserId == null) stringResource(R.string.create) else stringResource(R.string.save))
-                }
+                variant = SynapseButtonVariant.Primary,
+                size = SynapseButtonSize.Lg,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("edit_save_button"),
+            )
+
+            if (state.isSaving) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                )
             }
+
+            // Bottom spacing
+            androidx.compose.foundation.layout.Spacer(
+                Modifier.padding(bottom = Tokens.Space.Xl),
+            )
         }
     }
 }

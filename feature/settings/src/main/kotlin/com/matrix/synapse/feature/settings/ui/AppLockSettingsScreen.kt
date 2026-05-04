@@ -1,35 +1,43 @@
 package com.matrix.synapse.feature.settings.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import com.matrix.synapse.core.ui.SynapseTopBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.matrix.synapse.core.resources.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import com.matrix.synapse.core.resources.R
+import com.matrix.synapse.core.ui.SynapseTopBar
+import com.matrix.synapse.core.ui.components.SectionHeader
+import com.matrix.synapse.core.ui.components.SynapseCard
+import com.matrix.synapse.core.ui.components.SynapseListItem
+import com.matrix.synapse.core.ui.components.SynapseScaffold
+import com.matrix.synapse.core.ui.components.SynapseToggle
+import com.matrix.synapse.core.ui.theme.SynapseText
+import com.matrix.synapse.core.ui.theme.SynapseTheme
+import com.matrix.synapse.core.ui.theme.Tokens
 import com.matrix.synapse.feature.settings.security.AppLockManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,7 +61,6 @@ class AppLockSettingsViewModel @Inject constructor(
 
     fun pinExists(): Boolean = appLockManager.pinExists()
 
-    /** Call when user turns the lock switch ON. If no PIN exists, shows Create PIN; else enables lock. */
     fun requestEnableLock() {
         viewModelScope.launch {
             if (appLockManager.pinExists()) {
@@ -102,6 +109,7 @@ class AppLockSettingsViewModel @Inject constructor(
 @Composable
 fun AppLockSettingsScreen(
     onRearrangeTabs: (() -> Unit)? = null,
+    appVersion: String? = null,
     viewModel: AppLockSettingsViewModel = hiltViewModel(),
 ) {
     val isEnabled by viewModel.isLockEnabled.collectAsStateWithLifecycle()
@@ -113,7 +121,7 @@ fun AppLockSettingsScreen(
         showCreatePin -> {
             Surface(
                 modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.surface,
+                color = SynapseTheme.colors.bg,
             ) {
                 CreatePinContent(
                     onPinCreated = viewModel::onPinCreated,
@@ -124,7 +132,7 @@ fun AppLockSettingsScreen(
         showChangePin -> {
             Surface(
                 modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.surface,
+                color = SynapseTheme.colors.bg,
             ) {
                 ChangePinContent(
                     verifyCurrentPin = viewModel::verifyPin,
@@ -133,76 +141,133 @@ fun AppLockSettingsScreen(
                 )
             }
         }
-        else -> Scaffold(
-            topBar = {
-                SynapseTopBar(title = stringResource(R.string.settings))
-            },
+        else -> SynapseScaffold(
+            topBar = { SynapseTopBar(title = stringResource(R.string.settings)) },
         ) { padding ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(horizontal = 24.dp),
+                    .verticalScroll(rememberScrollState()),
             ) {
-                onRearrangeTabs?.let { onNavigate ->
-                    ListItem(
-                        leadingContent = {
-                            Icon(
-                                imageVector = Icons.Filled.Menu,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        },
-                        headlineContent = { Text(stringResource(R.string.rearrange_tabs)) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onNavigate() },
-                    )
-                    HorizontalDivider()
-                }
-                ListItem(
-                    leadingContent = {
-                        Icon(
-                            imageVector = Icons.Filled.Lock,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    },
-                    headlineContent = { Text(stringResource(R.string.app_lock)) },
-                    supportingContent = {
-                        Text(
-                            text = "Require app PIN when the app is resumed",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    },
-                    trailingContent = {
-                        Switch(
-                            checked = isEnabled,
-                            onCheckedChange = { checked ->
-                                if (checked) viewModel.requestEnableLock()
-                                else viewModel.setEnabled(false)
+                // ── APP LOCK ─────────────────────────────────────────
+                SectionHeader(stringResource(R.string.app_lock))
+                SynapseCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Tokens.Space.ScreenEdge),
+                    padding = 0.dp,
+                ) {
+                    Column {
+                        SynapseListItem(
+                            headline = stringResource(R.string.app_lock),
+                            supporting = "Require app PIN when the app is resumed",
+                            leading = {
+                                Icon(
+                                    imageVector = Icons.Filled.Lock,
+                                    contentDescription = null,
+                                    tint = SynapseTheme.colors.textMuted,
+                                )
                             },
-                            modifier = Modifier.testTag("app_lock_toggle"),
+                            trailing = {
+                                SynapseToggle(
+                                    checked = isEnabled,
+                                    onCheckedChange = { checked ->
+                                        if (checked) viewModel.requestEnableLock()
+                                        else viewModel.setEnabled(false)
+                                    },
+                                    modifier = Modifier.testTag("app_lock_toggle"),
+                                )
+                            },
+                            showDivider = pinExists,
                         )
-                    },
-                )
-                if (pinExists) {
-                    HorizontalDivider()
-                    ListItem(
-                        leadingContent = {
-                            Icon(
-                                imageVector = Icons.Filled.Lock,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        if (pinExists) {
+                            SynapseListItem(
+                                headline = stringResource(R.string.change_pin),
+                                leading = {
+                                    Icon(
+                                        imageVector = Icons.Filled.Lock,
+                                        contentDescription = null,
+                                        tint = SynapseTheme.colors.textMuted,
+                                    )
+                                },
+                                trailing = {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                        contentDescription = null,
+                                        tint = SynapseTheme.colors.textMuted,
+                                    )
+                                },
+                                onClick = { viewModel.showChangePinFlow() },
+                                showDivider = false,
                             )
-                        },
-                        headlineContent = { Text(stringResource(R.string.change_pin)) },
+                        }
+                    }
+                }
+
+                // ── APPEARANCE ───────────────────────────────────────
+                onRearrangeTabs?.let { onNavigate ->
+                    SectionHeader("Appearance")
+                    SynapseCard(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { viewModel.showChangePinFlow() },
-                    )
+                            .padding(horizontal = Tokens.Space.ScreenEdge),
+                        padding = 0.dp,
+                    ) {
+                        SynapseListItem(
+                            headline = stringResource(R.string.rearrange_tabs),
+                            supporting = "Reorder the bottom navigation tabs",
+                            leading = {
+                                Icon(
+                                    imageVector = Icons.Filled.Menu,
+                                    contentDescription = null,
+                                    tint = SynapseTheme.colors.textMuted,
+                                )
+                            },
+                            trailing = {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription = null,
+                                    tint = SynapseTheme.colors.textMuted,
+                                )
+                            },
+                            onClick = onNavigate,
+                            showDivider = false,
+                        )
+                    }
                 }
+
+                // ── ABOUT ────────────────────────────────────────────
+                if (appVersion != null) {
+                    SectionHeader("About")
+                    SynapseCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Tokens.Space.ScreenEdge),
+                        padding = 0.dp,
+                    ) {
+                        SynapseListItem(
+                            headline = "Version",
+                            leading = {
+                                Icon(
+                                    imageVector = Icons.Filled.Info,
+                                    contentDescription = null,
+                                    tint = SynapseTheme.colors.textMuted,
+                                )
+                            },
+                            trailing = {
+                                Text(
+                                    text = appVersion,
+                                    style = SynapseText.Mono,
+                                    color = SynapseTheme.colors.textMuted,
+                                )
+                            },
+                            showDivider = false,
+                        )
+                    }
+                }
+
+                Box(modifier = Modifier.size(Tokens.Space.Xxl))
             }
         }
     }

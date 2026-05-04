@@ -50,6 +50,8 @@
     <string name="cancel">Cancel</string>
     <string name="deactivate_selected_users">Deactivate</string>
     <string name="add_user">Add user</string>
+    <string name="no_users">No users</string>
+    <string name="no_users_body">No users to show</string>
 
     <!-- User detail -->
     <string name="user_not_found">User not found</string>

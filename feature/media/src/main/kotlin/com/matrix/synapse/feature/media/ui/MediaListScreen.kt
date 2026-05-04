@@ -1,34 +1,51 @@
 package com.matrix.synapse.feature.media.ui
 
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DeleteSweep
-import androidx.compose.material.icons.filled.MeetingRoom
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import com.matrix.synapse.core.ui.Spacing
-import com.matrix.synapse.core.ui.SynapseTopBar
-import com.matrix.synapse.feature.rooms.data.RoomSummary
-import com.matrix.synapse.feature.users.data.UserSummary
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
-import com.matrix.synapse.core.resources.R
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.matrix.synapse.core.resources.R
+import com.matrix.synapse.core.ui.SynapseTopBar
+import com.matrix.synapse.core.ui.components.DestructiveDialog
+import com.matrix.synapse.core.ui.components.SectionHeader
+import com.matrix.synapse.core.ui.components.StatusChip
+import com.matrix.synapse.core.ui.components.StatusTone
+import com.matrix.synapse.core.ui.components.SynapseButton
+import com.matrix.synapse.core.ui.components.SynapseButtonVariant
+import com.matrix.synapse.core.ui.components.SynapseCard
+import com.matrix.synapse.core.ui.components.SynapseEmptyState
+import com.matrix.synapse.core.ui.components.SynapseListItem
+import com.matrix.synapse.core.ui.components.SynapseScaffold
+import com.matrix.synapse.core.ui.components.SynapseSelectionTopAppBar
+import com.matrix.synapse.core.ui.theme.SynapseText
+import com.matrix.synapse.core.ui.theme.SynapseTheme
+import com.matrix.synapse.core.ui.theme.Tokens
+import com.matrix.synapse.feature.rooms.data.RoomSummary
+import com.matrix.synapse.feature.users.data.UserSummary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,15 +95,48 @@ fun MediaListScreen(
         state.error?.let { snackbarHostState.showSnackbar(it) }
     }
 
-    Scaffold(
+    val selectionActive = state.selectedKeys.isNotEmpty()
+
+    SynapseScaffold(
         topBar = {
-            SynapseTopBar(
-                title = state.currentServer?.displayName ?: serverUrl,
-                subtitle = serverUrl,
-                onTitleClick = onServers,
-                onBack = onBack,
-                titleCentered = true,
-            )
+            if (selectionActive) {
+                SynapseSelectionTopAppBar(
+                    selectedCount = state.selectedKeys.size,
+                    onClose = { viewModel.clearSelection() },
+                    actions = {
+                        IconButton(
+                            onClick = { viewModel.deleteSelectedMedia() },
+                            modifier = Modifier.testTag("media_delete_selected"),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Delete,
+                                contentDescription = stringResource(R.string.media_cd_delete_selected),
+                            )
+                        }
+                    },
+                )
+            } else {
+                SynapseTopBar(
+                    title = "Media",
+                    subtitle = serverUrl,
+                    onTitleClick = onServers,
+                    onBack = onBack,
+                    actions = {
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.Filled.Search,
+                                contentDescription = "Search",
+                            )
+                        }
+                        IconButton(onClick = {}) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = "More options",
+                            )
+                        }
+                    },
+                )
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
@@ -103,20 +153,14 @@ fun MediaListScreen(
             }
 
             state.error != null && state.mediaItems.isEmpty() -> {
-                Card(
+                SynapseEmptyState(
+                    title = state.error!!,
+                    icon = Icons.Filled.Info,
+                    errorTone = true,
                     modifier = Modifier
                         .padding(padding)
-                        .padding(Spacing.ScreenPadding)
-                        .fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                ) {
-                    Text(
-                        text = state.error!!,
-                        modifier = Modifier.padding(Spacing.FieldSpacing).testTag("media_list_error"),
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
+                        .testTag("media_list_error"),
+                )
             }
 
             else -> {
@@ -131,37 +175,27 @@ fun MediaListScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .testTag("media_list"),
-                        contentPadding = PaddingValues(
-                            horizontal = Spacing.ScreenPadding,
-                            vertical = Spacing.TightSpacing,
-                        ),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.FieldSpacing),
+                        contentPadding = PaddingValues(bottom = Tokens.Space.Xl),
                     ) {
+                        // Constraint callout
                         item {
-                            Text(
-                                text = stringResource(R.string.media_actions_hint),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            MediaConstraintCallout(
+                                modifier = Modifier
+                                    .padding(horizontal = Tokens.Space.ScreenEdge)
+                                    .padding(top = Tokens.Space.Md),
                             )
                         }
 
+                        // Scope filter card
                         item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                ),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                            SectionHeader(text = stringResource(R.string.media_section_scope))
+                            SynapseCard(
+                                modifier = Modifier
+                                    .padding(horizontal = Tokens.Space.ScreenEdge)
+                                    .fillMaxWidth(),
+                                padding = Tokens.Space.Lg,
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(Spacing.FieldSpacing),
-                                    verticalArrangement = Arrangement.spacedBy(Spacing.FieldSpacing),
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.media_section_scope),
-                                        style = MaterialTheme.typography.titleSmall,
-                                        color = MaterialTheme.colorScheme.primary,
-                                    )
+                                Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.Md)) {
                                     RoomDropdown(
                                         rooms = state.rooms,
                                         roomsLoading = state.roomsLoading,
@@ -190,28 +224,21 @@ fun MediaListScreen(
                             }
                         }
 
+                        // User date filter
                         if (state.selectedUserId != null) {
                             item {
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                    ),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                SectionHeader(text = stringResource(R.string.media_section_time_filter))
+                                SynapseCard(
+                                    modifier = Modifier
+                                        .padding(horizontal = Tokens.Space.ScreenEdge)
+                                        .fillMaxWidth(),
+                                    padding = Tokens.Space.Lg,
                                 ) {
-                                    Column(
-                                        modifier = Modifier.padding(Spacing.FieldSpacing),
-                                        verticalArrangement = Arrangement.spacedBy(Spacing.TightSpacing),
-                                    ) {
-                                        Text(
-                                            text = stringResource(R.string.media_section_time_filter),
-                                            style = MaterialTheme.typography.titleSmall,
-                                            color = MaterialTheme.colorScheme.primary,
-                                        )
+                                    Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.Sm)) {
                                         Text(
                                             text = stringResource(R.string.media_user_created_filter_hint),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            style = SynapseText.BodyS,
+                                            color = SynapseTheme.colors.textMuted,
                                         )
                                         OutlinedTextField(
                                             value = userFromTsText,
@@ -227,28 +254,35 @@ fun MediaListScreen(
                                             singleLine = true,
                                             modifier = Modifier.fillMaxWidth(),
                                         )
-                                        Row(
-                                            horizontalArrangement = Arrangement.spacedBy(Spacing.TightSpacing),
-                                        ) {
-                                            Button(
+                                        Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.Sm)) {
+                                            SynapseButton(
+                                                text = stringResource(R.string.media_apply_date_filter),
                                                 onClick = {
                                                     viewModel.setUserMediaDateRange(
                                                         userFromTsText.toLongOrNull(),
                                                         userUntilTsText.toLongOrNull(),
                                                     )
                                                 },
-                                            ) { Text(stringResource(R.string.media_apply_date_filter)) }
-                                            TextButton(onClick = {
-                                                userFromTsText = ""
-                                                userUntilTsText = ""
-                                                viewModel.setUserMediaDateRange(null, null)
-                                            }) { Text(stringResource(R.string.media_clear_date_filter)) }
+                                                variant = SynapseButtonVariant.Primary,
+                                                size = com.matrix.synapse.core.ui.components.SynapseButtonSize.Sm,
+                                            )
+                                            SynapseButton(
+                                                text = stringResource(R.string.media_clear_date_filter),
+                                                onClick = {
+                                                    userFromTsText = ""
+                                                    userUntilTsText = ""
+                                                    viewModel.setUserMediaDateRange(null, null)
+                                                },
+                                                variant = SynapseButtonVariant.Ghost,
+                                                size = com.matrix.synapse.core.ui.components.SynapseButtonSize.Sm,
+                                            )
                                         }
                                     }
                                 }
                             }
                         }
 
+                        // Bulk-action toolbar (visible when a scope is selected)
                         if (state.selectedRoomId != null || state.selectedUserId != null) {
                             item {
                                 MediaListToolbar(
@@ -261,47 +295,75 @@ fun MediaListScreen(
                                     onDeleteSelected = { viewModel.deleteSelectedMedia() },
                                     onDeleteUserMedia = { showUserScopedDeleteDialog = true },
                                     onDeleteRoomMedia = { showRoomScopedDeleteDialog = true },
-                                    modifier = Modifier.padding(top = Spacing.TightSpacing),
+                                    modifier = Modifier.padding(
+                                        horizontal = Tokens.Space.ScreenEdge,
+                                        vertical = Tokens.Space.Xs,
+                                    ),
                                 )
                             }
                         }
 
-                        items(
-                            items = state.mediaItems,
-                            key = { m -> "${m.origin}\u0000${m.mediaId}" },
-                        ) { mediaItem ->
-                            val selected = mediaItem.stableKey() in state.selectedKeys
-                            MediaListItemCard(
-                                item = mediaItem,
-                                selected = selected,
-                                onClick = { viewModel.toggleSelection(mediaItem) },
-                                onLongClick = { onMediaClick(mediaItem.origin, mediaItem.mediaId) },
-                            )
+                        // Media list header
+                        if (state.mediaItems.isNotEmpty()) {
+                            item {
+                                SectionHeader(text = stringResource(R.string.media_section_list))
+                                SynapseCard(
+                                    modifier = Modifier
+                                        .padding(horizontal = Tokens.Space.ScreenEdge)
+                                        .fillMaxWidth(),
+                                    padding = 0.dp,
+                                ) {
+                                    Column {
+                                        state.mediaItems.forEachIndexed { index, mediaItem ->
+                                            val selected = mediaItem.stableKey() in state.selectedKeys
+                                            val mimeIcon = mimeTypeIcon(null) // origin only, no mime in model
+                                            SynapseListItem(
+                                                headline = mediaItem.mediaId,
+                                                supporting = "mxc://${mediaItem.origin}/${mediaItem.mediaId}",
+                                                supportingMono = true,
+                                                leading = {
+                                                    Icon(
+                                                        imageVector = if (mediaItem.isLocal) Icons.Filled.Star else Icons.Filled.Email,
+                                                        contentDescription = null,
+                                                        tint = SynapseTheme.colors.textMuted,
+                                                    )
+                                                },
+                                                trailing = {
+                                                    StatusChip(
+                                                        text = if (mediaItem.isLocal) {
+                                                            stringResource(R.string.media_local)
+                                                        } else {
+                                                            stringResource(R.string.media_remote)
+                                                        },
+                                                        tone = if (mediaItem.isLocal) StatusTone.Accent else StatusTone.Neutral,
+                                                    )
+                                                },
+                                                onClick = { viewModel.toggleSelection(mediaItem) },
+                                                onLongClick = { onMediaClick(mediaItem.origin, mediaItem.mediaId) },
+                                                selected = selected,
+                                                showDivider = index < state.mediaItems.lastIndex,
+                                                modifier = Modifier.testTag("media_row_${mediaItem.mediaId}"),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
 
+                        // Empty state
                         if (state.mediaItems.isEmpty()) {
                             item {
-                                Surface(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(12.dp)),
-                                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.45f),
-                                ) {
-                                    val emptyMessage = when {
-                                        filterRoomId != null || filterUserId != null -> stringResource(R.string.no_media_found)
-                                        state.selectedRoomId == null && state.selectedUserId == null ->
-                                            stringResource(R.string.select_room_or_user_to_list_media)
-                                        else -> stringResource(R.string.no_media_found)
-                                    }
-                                    Text(
-                                        emptyMessage,
-                                        modifier = Modifier
-                                            .padding(Spacing.FieldSpacing)
-                                            .testTag("media_list_empty"),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
+                                val emptyMessage = when {
+                                    filterRoomId != null || filterUserId != null -> stringResource(R.string.no_media_found)
+                                    state.selectedRoomId == null && state.selectedUserId == null ->
+                                        stringResource(R.string.select_room_or_user_to_list_media)
+                                    else -> stringResource(R.string.no_media_found)
                                 }
+                                SynapseEmptyState(
+                                    title = emptyMessage,
+                                    icon = Icons.Filled.Info,
+                                    modifier = Modifier.testTag("media_list_empty"),
+                                )
                             }
                         }
                     }
@@ -311,48 +373,77 @@ fun MediaListScreen(
     }
 
     if (showUserScopedDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showUserScopedDeleteDialog = false },
-            title = { Text(stringResource(R.string.media_delete_user_confirm_title)) },
-            text = { Text(stringResource(R.string.media_delete_user_confirm_body)) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showUserScopedDeleteDialog = false
-                        viewModel.bulkDeleteUserScopedMedia()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                ) { Text(stringResource(R.string.delete)) }
+        DestructiveDialog(
+            title = stringResource(R.string.media_delete_user_confirm_title),
+            body = stringResource(R.string.media_delete_user_confirm_body),
+            confirmLabel = stringResource(R.string.delete),
+            onConfirm = {
+                showUserScopedDeleteDialog = false
+                viewModel.bulkDeleteUserScopedMedia()
             },
-            dismissButton = {
-                TextButton(onClick = { showUserScopedDeleteDialog = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
+            onDismiss = { showUserScopedDeleteDialog = false },
         )
     }
 
     if (showRoomScopedDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showRoomScopedDeleteDialog = false },
-            title = { Text(stringResource(R.string.media_delete_room_confirm_title)) },
-            text = { Text(stringResource(R.string.media_delete_room_confirm_body)) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showRoomScopedDeleteDialog = false
-                        viewModel.bulkDeleteRoomScopedMedia()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                ) { Text(stringResource(R.string.delete)) }
+        DestructiveDialog(
+            title = stringResource(R.string.media_delete_room_confirm_title),
+            body = stringResource(R.string.media_delete_room_confirm_body),
+            confirmLabel = stringResource(R.string.delete),
+            onConfirm = {
+                showRoomScopedDeleteDialog = false
+                viewModel.bulkDeleteRoomScopedMedia()
             },
-            dismissButton = {
-                TextButton(onClick = { showRoomScopedDeleteDialog = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
+            onDismiss = { showRoomScopedDeleteDialog = false },
         )
     }
+}
+
+@Composable
+private fun MediaConstraintCallout(modifier: Modifier = Modifier) {
+    val c = SynapseTheme.colors
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(Tokens.Radius.Md))
+            .background(c.surface2)
+            .padding(Tokens.Space.Lg),
+        horizontalArrangement = Arrangement.spacedBy(Tokens.Space.Md),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Info,
+            contentDescription = null,
+            tint = c.textMuted,
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "Unencrypted media · this room",
+                style = SynapseText.BodyM,
+                color = c.text,
+            )
+            Text(
+                text = "Synapse only lists media from unencrypted events.",
+                style = SynapseText.Caption,
+                color = c.textMuted,
+            )
+        }
+        SynapseButton(
+            text = "Select",
+            onClick = {},
+            variant = SynapseButtonVariant.Outline,
+            size = com.matrix.synapse.core.ui.components.SynapseButtonSize.Sm,
+        )
+    }
+}
+
+/** Returns an icon appropriate for a given MIME type prefix. */
+private fun mimeTypeIcon(mimeType: String?): ImageVector = when {
+    mimeType == null -> Icons.Filled.Email
+    mimeType.startsWith("image/") -> Icons.Filled.Star
+    mimeType.startsWith("video/") -> Icons.Filled.PlayArrow
+    mimeType.startsWith("audio/") -> Icons.Filled.Build
+    else -> Icons.Filled.Email
 }
 
 @Composable
@@ -368,9 +459,10 @@ private fun MediaListToolbar(
     onDeleteRoomMedia: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val c = SynapseTheme.colors
     val errorColors = IconButtonDefaults.iconButtonColors(
-        contentColor = MaterialTheme.colorScheme.error,
-        disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+        contentColor = c.danger,
+        disabledContentColor = c.textDim,
     )
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -379,8 +471,8 @@ private fun MediaListToolbar(
     ) {
         Text(
             text = stringResource(R.string.media_section_list),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = SynapseText.TitleS,
+            color = c.textMuted,
             modifier = Modifier.weight(1f),
         )
         Row(
@@ -395,6 +487,7 @@ private fun MediaListToolbar(
                     Icon(
                         imageVector = Icons.Filled.Close,
                         contentDescription = stringResource(R.string.media_cd_clear_selection),
+                        tint = c.text,
                     )
                 }
             }
@@ -417,7 +510,7 @@ private fun MediaListToolbar(
                     colors = errorColors,
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.DeleteSweep,
+                        imageVector = Icons.Filled.Delete,
                         contentDescription = stringResource(R.string.media_cd_delete_user_media),
                     )
                 }
@@ -430,100 +523,10 @@ private fun MediaListToolbar(
                     colors = errorColors,
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.MeetingRoom,
+                        imageVector = Icons.Filled.Menu,
                         contentDescription = stringResource(R.string.media_cd_delete_room_media),
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun MediaListItemCard(
-    item: MediaListItem,
-    selected: Boolean,
-    onClick: () -> Unit,
-    onLongClick: () -> Unit,
-) {
-    val container = when {
-        selected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.42f)
-        else -> MaterialTheme.colorScheme.surfaceContainerHigh
-    }
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick,
-            )
-            .testTag("media_row_${item.mediaId}"),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = container),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = Spacing.FieldSpacing, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = item.mediaId,
-                    style = MaterialTheme.typography.titleSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                if (selected) {
-                    Icon(
-                        imageVector = Icons.Filled.Check,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
-                }
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.TightSpacing),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val pillColor = if (item.isLocal) {
-                    MaterialTheme.colorScheme.secondaryContainer
-                } else {
-                    MaterialTheme.colorScheme.tertiaryContainer
-                }
-                val pillOnColor = if (item.isLocal) {
-                    MaterialTheme.colorScheme.onSecondaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onTertiaryContainer
-                }
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = pillColor,
-                ) {
-                    Text(
-                        text = if (item.isLocal) {
-                            stringResource(R.string.media_local)
-                        } else {
-                            stringResource(R.string.media_remote)
-                        },
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = pillOnColor,
-                    )
-                }
-                Text(
-                    text = item.origin,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
             }
         }
     }

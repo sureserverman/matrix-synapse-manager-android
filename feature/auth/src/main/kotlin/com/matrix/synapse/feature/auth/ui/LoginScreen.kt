@@ -1,22 +1,26 @@
 package com.matrix.synapse.feature.auth.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,21 +30,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.matrix.synapse.core.resources.R
 import com.matrix.synapse.core.ui.SynapseTopBar
+import com.matrix.synapse.core.ui.components.Field
+import com.matrix.synapse.core.ui.components.SynapseButton
+import com.matrix.synapse.core.ui.components.SynapseButtonSize
+import com.matrix.synapse.core.ui.components.SynapseScaffold
+import com.matrix.synapse.core.ui.theme.SynapseText
+import com.matrix.synapse.core.ui.theme.SynapseTheme
+import com.matrix.synapse.core.ui.theme.Tokens
 import com.matrix.synapse.feature.auth.oauth.OAuthLoginContract
 import com.matrix.synapse.feature.auth.oauth.OAuthLoginResult
-
-private val ScreenPadding = 24.dp
-private val FieldSpacing = 16.dp
-private val SectionSpacing = 24.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,16 +58,15 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val c = SynapseTheme.colors
 
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    // Kick off strategy resolution once per serverUrl.
     LaunchedEffect(serverUrl) {
         viewModel.startLogin(serverUrl, serverId)
     }
 
-    // Launch the OAuth consent intent exactly once per AwaitingConsent state.
     val oauthLauncher = rememberLauncherForActivityResult(OAuthLoginContract()) { result ->
         when (result) {
             is OAuthLoginResult.Success -> viewModel.completeOauth(serverId, result.response)
@@ -72,9 +78,6 @@ fun LoginScreen(
     val currentState = state
     LaunchedEffect(currentState) {
         if (currentState is LoginState.AwaitingConsent) {
-            // Defensive: a device with no browser/Custom Tabs has no activity to
-            // resolve the intent and would otherwise crash the app. Surface as a
-            // recoverable error instead.
             try {
                 oauthLauncher.launch(currentState.authIntent)
             } catch (e: android.content.ActivityNotFoundException) {
@@ -86,7 +89,7 @@ fun LoginScreen(
                         e.message ?: "No browser available to handle OAuth consent",
                         null,
                         e,
-                    )
+                    ),
                 )
             }
         }
@@ -99,72 +102,97 @@ fun LoginScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            SynapseTopBar(title = stringResource(R.string.admin_login))
-        },
+    SynapseScaffold(
+        topBar = { SynapseTopBar(title = stringResource(R.string.admin_login)) },
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = ScreenPadding)
+                .padding(horizontal = Tokens.Space.Xl)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(FieldSpacing),
+            verticalArrangement = Arrangement.spacedBy(Tokens.Space.Lg),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Tokens.Space.Xl))
+
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(Tokens.Radius.Md))
+                    .background(c.surface3),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clip(CircleShape)
+                        .background(c.accent),
+                )
+            }
 
             Text(
+                text = "Sign in to Synapse",
+                style = SynapseText.Display,
+                color = c.text,
+            )
+            Text(
                 text = serverUrl,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = SynapseText.Mono,
+                color = c.textMuted,
+                modifier = Modifier.testTag("login_server_url"),
             )
 
-            Spacer(Modifier.height(SectionSpacing))
+            Spacer(Modifier.height(Tokens.Space.Sm))
 
             when (currentState) {
                 is LoginState.Loading, is LoginState.AwaitingConsent -> {
                     CircularProgressIndicator(
+                        color = c.accent,
                         modifier = Modifier.testTag("login_oauth_progress"),
                     )
                     if (currentState is LoginState.AwaitingConsent) {
                         Text(
                             text = "Opening browser…",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = SynapseText.BodyM,
+                            color = c.textMuted,
                             modifier = Modifier.testTag("login_oauth_opening_browser"),
                         )
                     }
                 }
 
                 LoginState.Idle -> {
-                    // Password form for non-MAS servers (or after cancellation).
-                    OutlinedTextField(
+                    Field(
                         value = username,
                         onValueChange = { username = it },
-                        label = { Text(stringResource(R.string.username)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().testTag("login_username"),
+                        label = stringResource(R.string.username),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("login_username"),
                     )
-
-                    OutlinedTextField(
+                    Field(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text(stringResource(R.string.password)) },
-                        singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        modifier = Modifier.fillMaxWidth().testTag("login_password"),
+                        label = stringResource(R.string.password),
+                        isPassword = true,
+                        keyboardType = KeyboardType.Password,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("login_password"),
                     )
 
-                    Spacer(Modifier.height(SectionSpacing))
+                    Spacer(Modifier.height(Tokens.Space.Sm))
 
-                    Button(
+                    SynapseButton(
+                        text = stringResource(R.string.sign_in),
                         onClick = { viewModel.submitPassword(serverUrl, serverId, username, password) },
-                        modifier = Modifier.fillMaxWidth().testTag("login_button"),
-                    ) {
-                        Text(stringResource(R.string.sign_in))
-                    }
+                        size = SynapseButtonSize.Lg,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("login_button"),
+                    )
+
+                    SecurityCallout()
                 }
 
                 is LoginState.Error -> {
@@ -175,25 +203,47 @@ fun LoginScreen(
                     }
                     Text(
                         text = errorMessage,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = SynapseText.BodyS,
+                        color = c.danger,
                         modifier = Modifier.testTag("login_error"),
                     )
-
                     if (currentState.isScopeDenied) {
-                        Button(
+                        SynapseButton(
+                            text = stringResource(R.string.retry),
                             onClick = { viewModel.startLogin(serverUrl, serverId) },
                             modifier = Modifier.testTag("login_retry_button"),
-                        ) {
-                            Text(stringResource(R.string.retry))
-                        }
+                        )
                     }
                 }
 
-                is LoginState.Success -> {
-                    // Handled above via LaunchedEffect; show nothing during navigation.
-                }
+                is LoginState.Success -> Unit
             }
         }
+    }
+}
+
+@Composable
+private fun SecurityCallout() {
+    val c = SynapseTheme.colors
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(Tokens.Radius.Md))
+            .background(c.surface2)
+            .padding(Tokens.Space.Lg),
+        verticalAlignment = Alignment.Top,
+        horizontalArrangement = Arrangement.spacedBy(Tokens.Space.Md),
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Lock,
+            contentDescription = null,
+            tint = c.accent,
+            modifier = Modifier.size(20.dp),
+        )
+        Text(
+            text = "Tokens are stored in the Android Keystore. Passwords are never stored.",
+            style = SynapseText.BodyS,
+            color = c.textMuted,
+        )
     }
 }

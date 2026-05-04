@@ -1,33 +1,60 @@
 package com.matrix.synapse.feature.federation.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.runtime.*
-import com.matrix.synapse.core.ui.SynapseTopBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.matrix.synapse.core.resources.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.matrix.synapse.core.resources.R
+import com.matrix.synapse.core.ui.SynapseTopBar
+import com.matrix.synapse.core.ui.components.DestructiveDialog
+import com.matrix.synapse.core.ui.components.SectionHeader
+import com.matrix.synapse.core.ui.components.StatusChip
+import com.matrix.synapse.core.ui.components.StatusTone
+import com.matrix.synapse.core.ui.components.SynapseButton
+import com.matrix.synapse.core.ui.components.SynapseButtonVariant
+import com.matrix.synapse.core.ui.components.SynapseCard
+import com.matrix.synapse.core.ui.components.SynapseEmptyState
+import com.matrix.synapse.core.ui.components.SynapseListItem
+import com.matrix.synapse.core.ui.components.SynapseScaffold
+import com.matrix.synapse.core.ui.theme.SynapseText
+import com.matrix.synapse.core.ui.theme.SynapseTheme
+import com.matrix.synapse.core.ui.theme.Tokens
+import com.matrix.synapse.feature.federation.data.FederationDestination
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -46,157 +73,265 @@ fun FederationDetailScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showResetDialog by remember { mutableStateOf(false) }
+    var menuExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.actionMessage) {
         state.actionMessage?.let { snackbarHostState.showSnackbar(it) }
     }
 
-    Scaffold(
+    SynapseScaffold(
         topBar = {
             SynapseTopBar(
                 title = destination,
                 onBack = onBack,
+                actions = {
+                    Box {
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = null,
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = stringResource(R.string.reset_connection),
+                                        style = SynapseText.BodyM,
+                                        color = SynapseTheme.colors.danger,
+                                    )
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    showResetDialog = true
+                                },
+                            )
+                        }
+                    }
+                },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         when {
-            state.isLoading && state.destination == null -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+            state.isLoading && state.destination == null -> Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center,
+            ) {
                 CircularProgressIndicator()
             }
 
-            state.error != null && state.destination == null -> Text(
-                state.error!!,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(padding).padding(24.dp),
-            )
+            state.error != null && state.destination == null -> Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center,
+            ) {
+                SynapseEmptyState(
+                    title = state.error!!,
+                    errorTone = true,
+                )
+            }
 
             state.destination != null -> {
                 val dest = state.destination!!
-                val healthColor = when {
-                    dest.failureTs == null -> Color(0xFF4CAF50)
-                    dest.retryInterval > 0 -> Color(0xFFFFC107)
-                    else -> Color(0xFFF44336)
+
+                val (statusLabel, statusTone) = when {
+                    dest.failureTs == null -> stringResource(R.string.healthy) to StatusTone.Success
+                    dest.retryInterval > 0 -> stringResource(R.string.retrying) to StatusTone.Warn
+                    else -> stringResource(R.string.failing) to StatusTone.Danger
                 }
 
                 PullToRefreshBox(
                     isRefreshing = state.isLoading,
                     onRefresh = { viewModel.loadDestination(serverUrl, serverId, destination) },
-                    modifier = Modifier.fillMaxSize().padding(padding),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
                 ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    // Health header
-                    item {
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Row(
-                                modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            ) {
-                                Box(modifier = Modifier.size(16.dp)) {
-                                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                                        drawCircle(color = healthColor)
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(0.dp),
+                    ) {
+                        // Header card: icon, host, last-seen, status chip
+                        item {
+                            Box(modifier = Modifier.padding(Tokens.Space.ScreenEdge)) {
+                                SynapseCard(modifier = Modifier.fillMaxWidth()) {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(Tokens.Space.Sm),
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(64.dp)
+                                                .clip(CircleShape)
+                                                .background(SynapseTheme.colors.surface2),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Place,
+                                                contentDescription = null,
+                                                tint = SynapseTheme.colors.textMuted,
+                                                modifier = Modifier.size(32.dp),
+                                            )
+                                        }
+                                        Text(
+                                            text = dest.destination,
+                                            style = SynapseText.Title,
+                                            color = SynapseTheme.colors.text,
+                                        )
+                                        if (dest.retryLastTs > 0) {
+                                            Text(
+                                                text = stringResource(R.string.last_seen, formatTimestamp(dest.retryLastTs)),
+                                                style = SynapseText.BodyS,
+                                                color = SynapseTheme.colors.textMuted,
+                                            )
+                                        }
+                                        StatusChip(
+                                            text = statusLabel,
+                                            tone = statusTone,
+                                            showDot = true,
+                                        )
                                     }
                                 }
-                                Text(
-                                    text = when {
-                                        dest.failureTs == null -> stringResource(R.string.healthy)
-                                        dest.retryInterval > 0 -> stringResource(R.string.retrying)
-                                        else -> stringResource(R.string.failing)
-                                    },
-                                    style = MaterialTheme.typography.headlineSmall,
-                                )
                             }
                         }
-                    }
 
-                    // Timing info
-                    item {
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(stringResource(R.string.connection_info), style = MaterialTheme.typography.titleMedium)
-                                InfoRow("First Failure", if (dest.failureTs != null) formatTimestamp(dest.failureTs) else "\u2014")
-                                InfoRow("Last Retry", if (dest.retryLastTs > 0) formatTimestamp(dest.retryLastTs) else "\u2014")
-                                InfoRow("Retry Interval", formatInterval(dest.retryInterval))
-                            }
-                        }
-                    }
-
-                    // Reset button
-                    item {
-                        Button(
-                            onClick = { showResetDialog = true },
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = !state.isResetting,
-                        ) {
-                            if (state.isResetting) {
-                                CircularProgressIndicator(modifier = Modifier.size(18.dp), color = MaterialTheme.colorScheme.onPrimary)
-                            } else {
-                                Text("Reset Connection")
-                            }
-                        }
-                    }
-
-                    // Shared rooms
-                    item {
-                        Text(stringResource(R.string.shared_rooms_count, state.totalRooms), style = MaterialTheme.typography.titleMedium)
-                    }
-
-                    items(state.rooms, key = { it.roomId }) { room ->
-                        ListItem(
-                            headlineContent = { Text(room.roomId, maxLines = 1) },
-                            modifier = if (onRoomClick != null) {
-                                Modifier.clickable { onRoomClick(room.roomId) }
-                            } else {
-                                Modifier
-                            }.testTag("federation_room_${room.roomId}"),
-                        )
-                    }
-
-                    if (state.hasMoreRooms) {
+                        // Statistics section
                         item {
-                            TextButton(
-                                onClick = { viewModel.loadMoreRooms(destination) },
-                                modifier = Modifier.fillMaxWidth(),
-                            ) { Text(stringResource(R.string.load_more_rooms)) }
+                            SectionHeader(text = stringResource(R.string.connection_info))
+                        }
+                        item {
+                            Box(modifier = Modifier.padding(horizontal = Tokens.Space.ScreenEdge)) {
+                                SynapseCard(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    padding = 0.dp,
+                                ) {
+                                    Column {
+                                        SynapseListItem(
+                                            headline = "First Failure",
+                                            trailing = {
+                                                Text(
+                                                    text = if (dest.failureTs != null) formatTimestamp(dest.failureTs) else "—",
+                                                    style = SynapseText.Mono,
+                                                    color = SynapseTheme.colors.textMuted,
+                                                )
+                                            },
+                                        )
+                                        SynapseListItem(
+                                            headline = "Last Retry",
+                                            trailing = {
+                                                Text(
+                                                    text = if (dest.retryLastTs > 0) formatTimestamp(dest.retryLastTs) else "—",
+                                                    style = SynapseText.Mono,
+                                                    color = SynapseTheme.colors.textMuted,
+                                                )
+                                            },
+                                        )
+                                        SynapseListItem(
+                                            headline = "Retry Interval",
+                                            trailing = {
+                                                Text(
+                                                    text = formatInterval(dest.retryInterval),
+                                                    style = SynapseText.Mono,
+                                                    color = SynapseTheme.colors.textMuted,
+                                                )
+                                            },
+                                            showDivider = false,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Shared rooms
+                        item {
+                            SectionHeader(
+                                text = stringResource(R.string.shared_rooms_count, state.totalRooms),
+                            )
+                        }
+                        item {
+                            Box(modifier = Modifier.padding(horizontal = Tokens.Space.ScreenEdge)) {
+                                SynapseCard(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    padding = 0.dp,
+                                ) {
+                                    Column {
+                                        state.rooms.forEachIndexed { index, room ->
+                                            SynapseListItem(
+                                                headline = room.roomId,
+                                                supportingMono = true,
+                                                showDivider = index < state.rooms.lastIndex || state.hasMoreRooms,
+                                                onClick = if (onRoomClick != null) {
+                                                    { onRoomClick(room.roomId) }
+                                                } else {
+                                                    null
+                                                },
+                                                modifier = Modifier.testTag("federation_room_${room.roomId}"),
+                                            )
+                                        }
+                                        if (state.hasMoreRooms) {
+                                            SynapseListItem(
+                                                headline = stringResource(R.string.load_more_rooms),
+                                                showDivider = false,
+                                                onClick = { viewModel.loadMoreRooms(destination) },
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Destructive section
+                        item {
+                            SectionHeader(text = "Destructive")
+                        }
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = Tokens.Space.ScreenEdge)
+                                    .padding(bottom = Tokens.Space.Xl),
+                            ) {
+                                SynapseCard(modifier = Modifier.fillMaxWidth()) {
+                                    SynapseButton(
+                                        text = stringResource(R.string.reset_connection),
+                                        onClick = { showResetDialog = true },
+                                        variant = SynapseButtonVariant.Danger,
+                                        enabled = !state.isResetting,
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                }
+                            }
                         }
                     }
-                }
                 }
             }
         }
     }
 
     if (showResetDialog) {
-        AlertDialog(
-            onDismissRequest = { showResetDialog = false },
-            title = { Text(stringResource(R.string.reset_connection)) },
-            text = { Text(stringResource(R.string.reset_connection_message, destination)) },
-            confirmButton = {
-                Button(onClick = {
-                    showResetDialog = false
-                    viewModel.resetConnection(destination)
-                }) { Text(stringResource(R.string.reset)) }
+        DestructiveDialog(
+            title = stringResource(R.string.reset_connection),
+            body = stringResource(R.string.reset_connection_message, destination),
+            confirmLabel = stringResource(R.string.reset),
+            onConfirm = {
+                showResetDialog = false
+                viewModel.resetConnection(destination)
             },
-            dismissButton = { TextButton(onClick = { showResetDialog = false }) { Text(stringResource(R.string.cancel)) } },
+            onDismiss = { showResetDialog = false },
+            dismissLabel = stringResource(R.string.cancel),
         )
     }
 }
 
-@Composable
-private fun InfoRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.typography.bodyMedium)
-        Text(value, style = MaterialTheme.typography.bodyMedium)
-    }
-}
-
 private fun formatTimestamp(ts: Long): String {
-    if (ts == 0L) return "\u2014"
+    if (ts == 0L) return "—"
     return SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(ts))
 }
 

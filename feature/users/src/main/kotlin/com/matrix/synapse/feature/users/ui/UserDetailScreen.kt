@@ -4,28 +4,24 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Checkbox
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.background
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import com.matrix.synapse.core.ui.SynapseTopBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,13 +30,29 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.matrix.synapse.core.resources.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
-import com.matrix.synapse.feature.users.data.mxcToDownloadUrl
+import com.matrix.synapse.core.resources.R
+import com.matrix.synapse.core.ui.SynapseTopBar
+import com.matrix.synapse.core.ui.components.DestructiveDialog
+import com.matrix.synapse.core.ui.components.SectionHeader
+import com.matrix.synapse.core.ui.components.SynapseButton
+import com.matrix.synapse.core.ui.components.SynapseButtonVariant
+import com.matrix.synapse.core.ui.components.SynapseCard
+import com.matrix.synapse.core.ui.components.SynapseListItem
+import com.matrix.synapse.core.ui.components.SynapseScaffold
+import com.matrix.synapse.core.ui.components.SynapseToggle
+import com.matrix.synapse.core.ui.components.StatusChip
+import com.matrix.synapse.core.ui.components.StatusTone
+import com.matrix.synapse.core.ui.theme.SynapseText
+import com.matrix.synapse.core.ui.theme.SynapseTheme
+import com.matrix.synapse.core.ui.theme.Tokens
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,7 +70,6 @@ fun UserDetailScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showDeactivateDialog by remember { mutableStateOf(false) }
-    var deleteMediaChecked by remember { mutableStateOf(false) }
 
     LaunchedEffect(serverUrl, serverId, userId) {
         viewModel.loadUser(serverUrl, serverId, userId)
@@ -76,200 +87,277 @@ fun UserDetailScreen(
         state.error?.let { snackbarHostState.showSnackbar(it) }
     }
 
-    Scaffold(
+    val c = SynapseTheme.colors
+
+    if (showDeactivateDialog) {
+        DestructiveDialog(
+            title = stringResource(R.string.deactivate_user_title),
+            body = stringResource(R.string.deactivate_user_message),
+            confirmLabel = stringResource(R.string.deactivate),
+            onConfirm = {
+                showDeactivateDialog = false
+                viewModel.deactivateUser(serverUrl, serverId, userId, false)
+            },
+            onDismiss = { showDeactivateDialog = false },
+        )
+    }
+
+    SynapseScaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             SynapseTopBar(
-                title = state.user?.displayName ?: state.user?.userId ?: stringResource(R.string.user),
+                title = userId,
+                subtitle = state.user?.displayName,
                 onBack = onBack,
+                actions = {
+                    IconButton(onClick = { }) {
+                        Icon(Icons.Filled.MoreVert, contentDescription = null, tint = c.textMuted)
+                    }
+                },
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         if (state.isLoading && state.user == null) {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                CircularProgressIndicator()
-            }
-            return@Scaffold
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center,
+            ) { CircularProgressIndicator() }
+            return@SynapseScaffold
         }
 
         val user = state.user
         if (user == null) {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center,
             ) {
-                Text(stringResource(R.string.user_not_found), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    stringResource(R.string.user_not_found),
+                    style = SynapseText.BodyM,
+                    color = c.textMuted,
+                )
             }
-            return@Scaffold
+            return@SynapseScaffold
         }
 
-        val userAvatarUrl = mxcToDownloadUrl(serverUrl, user.avatarUrl)
         PullToRefreshBox(
             isRefreshing = state.isLoading,
             onRefresh = { viewModel.loadUser(serverUrl, serverId, userId) },
-            modifier = Modifier.fillMaxSize().padding(padding),
-        ) {
-        Column(
             modifier = Modifier
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .fillMaxSize()
+                .padding(padding),
         ) {
-            // Full-width avatar at top
-            if (userAvatarUrl != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                ) {
-                    AsyncImage(
-                        model = userAvatarUrl,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                    )
-                }
-            }
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = Tokens.Space.Xl),
             ) {
-            Text(user.userId, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(user.userId, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                // ── Header card ────────────────────────────────────────────
+                SynapseCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = Tokens.Space.ScreenEdge,
+                            vertical = Tokens.Space.Lg,
+                        ),
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(Tokens.Space.Sm),
+                    ) {
+                        val initial = (user.displayName ?: user.userId)
+                            .firstOrNull()?.uppercaseChar()?.toString() ?: "?"
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clip(CircleShape)
+                                .background(c.surface3),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(text = initial, style = SynapseText.Title, color = c.text)
+                        }
+                        if (user.displayName != null) {
+                            Text(
+                                text = user.displayName,
+                                style = SynapseText.Title,
+                                color = c.text,
+                            )
+                        }
+                        Text(
+                            text = user.userId,
+                            style = SynapseText.Mono,
+                            color = c.textMuted,
+                        )
+                        val chips = buildList {
+                            if (user.admin) add("Admin" to StatusTone.Accent)
+                            if (user.locked) add("Locked" to StatusTone.Warn)
+                            if (user.suspended) add("Suspended" to StatusTone.Danger)
+                        }
+                        if (chips.isNotEmpty()) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(Tokens.Space.Sm)) {
+                                chips.forEach { (label, tone) ->
+                                    StatusChip(text = label, tone = tone)
+                                }
+                            }
+                        }
+                    }
+                }
 
-            if (user.admin) {
-                Text(stringResource(R.string.admin), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
-            }
+                // ── Profile section ────────────────────────────────────────
+                SectionHeader(text = "Profile")
+                SynapseCard(
+                    padding = 0.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Tokens.Space.ScreenEdge),
+                ) {
+                    Column {
+                        if (user.displayName != null) {
+                            SynapseListItem(
+                                headline = stringResource(R.string.display_name_optional),
+                                trailing = {
+                                    Text(
+                                        text = user.displayName,
+                                        style = SynapseText.BodyM,
+                                        color = c.textMuted,
+                                    )
+                                },
+                                showDivider = user.threepids.isNotEmpty() || user.creationTs > 0L,
+                            )
+                        }
+                        if (user.threepids.isNotEmpty()) {
+                            val emailCount = user.threepids.count { it.medium == "email" }
+                            val phoneCount = user.threepids.count { it.medium == "msisdn" }
+                            val summary = buildString {
+                                if (emailCount > 0) append("$emailCount email")
+                                if (phoneCount > 0) {
+                                    if (emailCount > 0) append(" · ")
+                                    append("$phoneCount phone")
+                                }
+                            }
+                            SynapseListItem(
+                                headline = "3PIDs",
+                                supporting = summary,
+                                showDivider = user.creationTs > 0L,
+                            )
+                        }
+                        if (user.creationTs > 0L) {
+                            val dateStr = remember(user.creationTs) {
+                                val millis = if (user.creationTs > 1_000_000_000_000L) {
+                                    user.creationTs
+                                } else {
+                                    user.creationTs * 1000L
+                                }
+                                SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                                    .format(Date(millis))
+                            }
+                            SynapseListItem(
+                                headline = "Created",
+                                trailing = {
+                                    Text(
+                                        text = dateStr,
+                                        style = SynapseText.BodyM,
+                                        color = c.textMuted,
+                                    )
+                                },
+                                showDivider = false,
+                            )
+                        }
+                    }
+                }
 
-            HorizontalDivider()
+                // ── Access section ─────────────────────────────────────────
+                val isCurrentUser = userId == state.currentUserId
+                SectionHeader(text = "Access")
+                SynapseCard(
+                    padding = 0.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Tokens.Space.ScreenEdge),
+                ) {
+                    Column {
+                        SynapseListItem(
+                            headline = stringResource(R.string.locked),
+                            trailing = {
+                                if (state.isLocking) {
+                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                } else {
+                                    SynapseToggle(
+                                        checked = user.locked,
+                                        onCheckedChange = { locked ->
+                                            viewModel.setLocked(serverUrl, userId, locked)
+                                        },
+                                        enabled = !isCurrentUser,
+                                    )
+                                }
+                            },
+                            showDivider = state.canSuspend,
+                        )
+                        if (state.canSuspend) {
+                            SynapseListItem(
+                                headline = stringResource(R.string.suspended),
+                                trailing = {
+                                    if (state.isSuspending) {
+                                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                    } else {
+                                        SynapseToggle(
+                                            checked = user.suspended,
+                                            onCheckedChange = { suspended ->
+                                                viewModel.setSuspended(serverUrl, userId, suspended)
+                                            },
+                                            enabled = !isCurrentUser,
+                                        )
+                                    }
+                                },
+                                showDivider = false,
+                            )
+                        }
+                    }
+                }
 
-            val isCurrentUser = userId == state.currentUserId
-            if (isCurrentUser) {
-                Text(
-                    stringResource(R.string.you_cannot_lock_yourself),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline,
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(stringResource(R.string.locked), style = MaterialTheme.typography.bodyMedium)
-                if (state.isLocking) {
-                    CircularProgressIndicator(modifier = Modifier.height(24.dp))
-                } else {
-                    Switch(
-                        checked = user.locked,
-                        onCheckedChange = { locked -> viewModel.setLocked(serverUrl, userId, locked) },
-                        enabled = !isCurrentUser,
+                // ── Devices section ────────────────────────────────────────
+                SectionHeader(text = "Devices")
+                SynapseCard(
+                    padding = 0.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Tokens.Space.ScreenEdge),
+                ) {
+                    SynapseListItem(
+                        headline = stringResource(R.string.devices),
+                        onClick = onDevices,
+                        showDivider = false,
                     )
                 }
-            }
 
-            if (state.canSuspend) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(stringResource(R.string.suspended), style = MaterialTheme.typography.bodyMedium)
-                    if (state.isSuspending) {
-                        CircularProgressIndicator(modifier = Modifier.height(24.dp))
-                    } else {
-                        Switch(
-                            checked = user.suspended,
-                            onCheckedChange = { suspended -> viewModel.setSuspended(serverUrl, userId, suspended) },
-                            enabled = !isCurrentUser,
-                        )
+                // ── Destructive section ────────────────────────────────────
+                if (!state.isDeactivated && !user.deactivated) {
+                    SectionHeader(text = "Destructive")
+                    SynapseCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = Tokens.Space.ScreenEdge),
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(Tokens.Space.Md),
+                        ) {
+                            SynapseButton(
+                                text = stringResource(R.string.deactivate_user),
+                                onClick = { showDeactivateDialog = true },
+                                variant = SynapseButtonVariant.Danger,
+                                enabled = !state.isDeactivating && userId != state.currentUserId,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
                     }
                 }
-            }
-
-            HorizontalDivider()
-            Spacer(Modifier.height(4.dp))
-
-            Button(onClick = onEdit, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.edit_user))
-            }
-            OutlinedButton(onClick = onDevices, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.devices))
-            }
-            OutlinedButton(onClick = onWhois, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.whois_sessions))
-            }
-            OutlinedButton(onClick = onMedia, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.media))
-            }
-
-            HorizontalDivider()
-            Spacer(Modifier.height(4.dp))
-
-            if (state.isDeactivated || user.deactivated) {
-                Text(
-                    stringResource(R.string.user_deactivated),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.labelLarge,
-                )
-            } else {
-                OutlinedButton(
-                    onClick = { showDeactivateDialog = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error,
-                    ),
-                    enabled = !state.isDeactivating && userId != state.currentUserId,
-                ) {
-                    if (state.isDeactivating) {
-                        CircularProgressIndicator(modifier = Modifier.height(18.dp))
-                    } else {
-                        Text("Deactivate User")
-                    }
-                }
-            }
             }
         }
-        }
-    }
-
-    if (showDeactivateDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeactivateDialog = false },
-            title = { Text(stringResource(R.string.deactivate_user_title)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.deactivate_user_message))
-                    Text(userId, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(
-                            checked = deleteMediaChecked,
-                            onCheckedChange = { deleteMediaChecked = it },
-                        )
-                        Text(stringResource(R.string.delete_all_user_media))
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showDeactivateDialog = false
-                        viewModel.deactivateUser(serverUrl, serverId, userId, deleteMediaChecked)
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                    ),
-                ) { Text(stringResource(R.string.deactivate)) }
-            },
-            dismissButton = {
-                OutlinedButton(onClick = { showDeactivateDialog = false }) { Text(stringResource(R.string.cancel)) }
-            },
-        )
     }
 }

@@ -9,18 +9,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import com.matrix.synapse.core.ui.SynapseTopBar
 import androidx.compose.runtime.Composable
@@ -36,14 +33,23 @@ import androidx.compose.ui.unit.dp
 import com.matrix.synapse.core.resources.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.matrix.synapse.feature.moderation.data.EventReportDetailResponse
+import com.matrix.synapse.core.ui.components.DestructiveDialog
+import com.matrix.synapse.core.ui.components.SectionHeader
+import com.matrix.synapse.core.ui.components.SynapseButton
+import com.matrix.synapse.core.ui.components.SynapseButtonVariant
+import com.matrix.synapse.core.ui.components.SynapseCard
+import com.matrix.synapse.core.ui.components.SynapseListItem
+import com.matrix.synapse.core.ui.components.SynapseScaffold
+import com.matrix.synapse.core.ui.theme.SynapseText
+import com.matrix.synapse.core.ui.theme.SynapseTheme
+import com.matrix.synapse.core.ui.theme.Tokens
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val json = Json { prettyPrint = true }
+private val prettyJson = Json { prettyPrint = true }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,11 +75,20 @@ fun EventReportDetailScreen(
         state.successMessage?.let { snackbarHostState.showSnackbar(it); viewModel.clearMessages() }
     }
 
-    Scaffold(
+    SynapseScaffold(
         topBar = {
             SynapseTopBar(
                 title = stringResource(R.string.report_number, reportId.toString()),
                 onBack = onBack,
+                actions = {
+                    IconButton(onClick = { /* reserved for overflow menu */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.MoreVert,
+                            contentDescription = null,
+                            tint = SynapseTheme.colors.textMuted,
+                        )
+                    }
+                },
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -83,11 +98,14 @@ fun EventReportDetailScreen(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
                 contentAlignment = Alignment.Center,
             ) { CircularProgressIndicator() }
+
             state.error != null && state.report == null -> Text(
                 state.error!!,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(innerPadding).padding(24.dp),
+                color = SynapseTheme.colors.danger,
+                style = SynapseText.BodyM,
+                modifier = Modifier.padding(innerPadding).padding(Tokens.Space.Xl),
             )
+
             state.report != null -> {
                 val report = state.report!!
                 PullToRefreshBox(
@@ -95,81 +113,151 @@ fun EventReportDetailScreen(
                     onRefresh = { viewModel.load(serverId, serverUrl, reportId) },
                     modifier = Modifier.fillMaxSize().padding(innerPadding),
                 ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(stringResource(R.string.report_info), style = MaterialTheme.typography.titleMedium)
-                            DetailRow("Event ID", report.eventId)
-                            DetailRow("Room", report.roomId)
-                            report.name?.let { DetailRow("Room name", it) }
-                            DetailRow("Sender", report.sender)
-                            DetailRow("Reporter", report.userId)
-                            report.reason?.let { DetailRow("Reason", it) }
-                            report.score?.let { DetailRow("Score", it.toString()) }
-                            DetailRow("Received", formatTs(report.receivedTs))
-                        }
-                    }
-                    report.eventJson?.let { jsonEl ->
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(stringResource(R.string.event_content), style = MaterialTheme.typography.titleMedium)
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(vertical = Tokens.Space.Md),
+                        verticalArrangement = Arrangement.spacedBy(Tokens.Space.Xs),
+                    ) {
+                        // Header card: reason + target event MXID
+                        SynapseCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Tokens.Space.ScreenEdge),
+                            padding = Tokens.Space.Lg,
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.Xs)) {
                                 Text(
-                                    text = json.encodeToString(JsonElement.serializer(), jsonEl),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    modifier = Modifier.fillMaxWidth(),
+                                    text = report.reason ?: stringResource(R.string.report_info),
+                                    style = SynapseText.Title,
+                                    color = SynapseTheme.colors.text,
+                                )
+                                Text(
+                                    text = report.eventId,
+                                    style = SynapseText.Mono,
+                                    color = SynapseTheme.colors.textMuted,
+                                )
+                            }
+                        }
+
+                        // REPORT section
+                        SectionHeader(stringResource(R.string.report_info))
+                        SynapseCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Tokens.Space.ScreenEdge),
+                            padding = 0.dp,
+                        ) {
+                            Column {
+                                SynapseListItem(
+                                    headline = "Reported user",
+                                    supporting = report.sender,
+                                    supportingMono = true,
+                                    showDivider = true,
+                                )
+                                SynapseListItem(
+                                    headline = "Reporter",
+                                    supporting = report.userId,
+                                    supportingMono = true,
+                                    showDivider = true,
+                                )
+                                val roomDisplay = report.name?.takeIf { it.isNotBlank() }
+                                    ?: report.canonicalAlias
+                                    ?: report.roomId
+                                SynapseListItem(
+                                    headline = "Room",
+                                    supporting = roomDisplay,
+                                    supportingMono = report.name == null && report.canonicalAlias == null,
+                                    showDivider = report.reason != null,
+                                )
+                                report.reason?.let { reason ->
+                                    SynapseListItem(
+                                        headline = "Reason",
+                                        supporting = reason,
+                                        supportingMono = false,
+                                        showDivider = true,
+                                    )
+                                }
+                                SynapseListItem(
+                                    headline = "When",
+                                    supporting = formatTs(report.receivedTs),
+                                    supportingMono = false,
+                                    showDivider = false,
+                                )
+                            }
+                        }
+
+                        // EVENT JSON section
+                        report.eventJson?.let { jsonEl ->
+                            SectionHeader(stringResource(R.string.event_content))
+                            SynapseCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = Tokens.Space.ScreenEdge),
+                                padding = Tokens.Space.Lg,
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .verticalScroll(rememberScrollState()),
+                                ) {
+                                    Text(
+                                        text = prettyJson.encodeToString(JsonElement.serializer(), jsonEl),
+                                        style = SynapseText.Mono,
+                                        color = SynapseTheme.colors.textMuted,
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                }
+                            }
+                        }
+
+                        // ACTIONS section
+                        SectionHeader(stringResource(R.string.actions))
+                        SynapseCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = Tokens.Space.ScreenEdge),
+                            padding = Tokens.Space.Lg,
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(Tokens.Space.Md),
+                            ) {
+                                SynapseButton(
+                                    text = "Dismiss",
+                                    onClick = { viewModel.deleteReport(reportId) },
+                                    variant = SynapseButtonVariant.Outline,
+                                    enabled = !state.isDeleting,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                SynapseButton(
+                                    text = "Take action",
+                                    onClick = { showDeleteDialog = true },
+                                    variant = SynapseButtonVariant.Danger,
+                                    enabled = !state.isDeleting,
+                                    modifier = Modifier.weight(1f),
                                 )
                             }
                         }
                     }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                    ) {
-                        Button(
-                            onClick = { showDeleteDialog = true },
-                            enabled = !state.isDeleting,
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                        ) {
-                            if (state.isDeleting) CircularProgressIndicator(modifier = Modifier.padding(4.dp))
-                            else Text(stringResource(R.string.delete_report))
-                        }
-                    }
-                }
                 }
             }
         }
     }
 
     if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text(stringResource(R.string.delete_report)) },
-            text = { Text(stringResource(R.string.delete_report_message)) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showDeleteDialog = false
-                        viewModel.deleteReport(reportId)
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                ) { Text(stringResource(R.string.delete)) }
+        DestructiveDialog(
+            title = stringResource(R.string.delete_report),
+            body = stringResource(R.string.delete_report_message),
+            confirmLabel = stringResource(R.string.delete),
+            dismissLabel = stringResource(R.string.cancel),
+            onConfirm = {
+                showDeleteDialog = false
+                viewModel.deleteReport(reportId)
             },
-            dismissButton = { TextButton(onClick = { showDeleteDialog = false }) { Text(stringResource(R.string.cancel)) } },
+            onDismiss = { showDeleteDialog = false },
         )
-    }
-}
-
-@Composable
-private fun DetailRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.typography.bodyMedium)
-        Text(value, style = MaterialTheme.typography.bodySmall, maxLines = 3)
     }
 }
 

@@ -1,46 +1,32 @@
 package com.matrix.synapse.feature.users.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -52,18 +38,25 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.stringResource
-import com.matrix.synapse.core.resources.R
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
-import com.matrix.synapse.core.ui.Spacing
+import com.matrix.synapse.core.resources.R
 import com.matrix.synapse.core.ui.SynapseTopBar
+import com.matrix.synapse.core.ui.components.DestructiveDialog
+import com.matrix.synapse.core.ui.components.Field
+import com.matrix.synapse.core.ui.components.SynapseEmptyState
+import com.matrix.synapse.core.ui.components.SynapseListItem
+import com.matrix.synapse.core.ui.components.SynapseScaffold
+import com.matrix.synapse.core.ui.components.SynapseSelectionTopAppBar
+import com.matrix.synapse.core.ui.components.StatusChip
+import com.matrix.synapse.core.ui.components.StatusTone
+import com.matrix.synapse.core.ui.theme.SynapseText
+import com.matrix.synapse.core.ui.theme.SynapseTheme
+import com.matrix.synapse.core.ui.theme.Tokens
 import com.matrix.synapse.feature.users.data.UserSummary
-import com.matrix.synapse.feature.users.data.mxcToDownloadUrl
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -96,40 +89,15 @@ fun UserListScreen(
     }
 
     if (showDeactivateUsersDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeactivateUsersDialog = false },
-            title = { Text(stringResource(R.string.deactivate_users_title)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        stringResource(R.string.deactivate_users_message, state.selectedUserIds.size),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    OutlinedButton(
-                        onClick = {
-                            viewModel.deleteSelectedUsers(erase = false)
-                            showDeactivateUsersDialog = false
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !state.isDeleting,
-                    ) { Text(stringResource(R.string.deactivate)) }
-                    OutlinedButton(
-                        onClick = {
-                            viewModel.deleteSelectedUsers(erase = true)
-                            showDeactivateUsersDialog = false
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !state.isDeleting,
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                    ) { Text(stringResource(R.string.delete_with_media)) }
-                    TextButton(
-                        onClick = { showDeactivateUsersDialog = false },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text(stringResource(R.string.cancel)) }
-                }
+        DestructiveDialog(
+            title = stringResource(R.string.deactivate_users_title),
+            body = stringResource(R.string.deactivate_users_message, state.selectedUserIds.size),
+            confirmLabel = stringResource(R.string.deactivate),
+            onConfirm = {
+                viewModel.deleteSelectedUsers(erase = false)
+                showDeactivateUsersDialog = false
             },
-            confirmButton = { },
-            dismissButton = { },
+            onDismiss = { showDeactivateUsersDialog = false },
         )
     }
 
@@ -141,68 +109,77 @@ fun UserListScreen(
         }
     }
 
-    Scaffold(
+    val c = SynapseTheme.colors
+
+    SynapseScaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            SynapseTopBar(
-                title = when {
-                    state.selectionMode -> stringResource(R.string.selected_count, state.selectedUserIds.size)
-                    else -> state.currentServer?.displayName ?: serverUrl
-                },
-                subtitle = when {
-                    state.selectionMode -> null
-                    state.totalUsers > 0L -> stringResource(R.string.users_count, serverUrl, state.totalUsers)
-                    else -> serverUrl
-                },
-                onTitleClick = onServers,
-                titleCentered = true,
-                actions = {
-                    if (state.selectionMode) {
+            if (state.selectionMode) {
+                SynapseSelectionTopAppBar(
+                    selectedCount = state.selectedUserIds.size,
+                    onClose = { viewModel.exitSelectionMode() },
+                    actions = {
                         IconButton(
                             onClick = { showDeactivateUsersDialog = true },
                             enabled = !state.isDeleting,
                             modifier = Modifier.testTag("user_selection_deactivate"),
                         ) {
-                            Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.deactivate_selected_users))
+                            Icon(
+                                Icons.Filled.Delete,
+                                contentDescription = stringResource(R.string.deactivate_selected_users),
+                            )
                         }
-                        TextButton(onClick = { viewModel.exitSelectionMode() }) { Text(stringResource(R.string.cancel)) }
-                    }
-                },
-            )
+                    },
+                )
+            } else {
+                SynapseTopBar(
+                    title = state.currentServer?.displayName ?: serverUrl,
+                    subtitle = if (state.totalUsers > 0L) {
+                        stringResource(R.string.users_count, serverUrl, state.totalUsers)
+                    } else {
+                        serverUrl
+                    },
+                    onTitleClick = onServers,
+                    titleCentered = true,
+                    actions = {
+                        IconButton(onClick = { }) {
+                            Icon(Icons.Filled.Search, contentDescription = null, tint = c.textMuted)
+                        }
+                        IconButton(onClick = { }) {
+                            Icon(Icons.Filled.Menu, contentDescription = null, tint = c.textMuted)
+                        }
+                    },
+                )
+            }
         },
         floatingActionButton = {
             if (!state.selectionMode) {
                 FloatingActionButton(
                     onClick = onAddUser,
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    containerColor = c.accent,
+                    contentColor = if (c.isLight) Tokens.Color.Light.Bg else Tokens.Color.Dark.Bg,
                 ) {
                     Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_user))
                 }
             }
         },
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            OutlinedTextField(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+        ) {
+            Field(
                 value = searchQuery,
                 onValueChange = { q ->
                     searchQuery = q
                     viewModel.search(q)
                 },
-                label = { Text(stringResource(R.string.search_users)) },
-                singleLine = true,
+                label = stringResource(R.string.search_users),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 12.dp)
+                    .padding(horizontal = Tokens.Space.ScreenEdge, vertical = Tokens.Space.Md)
                     .testTag("user_search"),
-            )
-            UserSortDropdown(
-                sortOrder = state.sortOrder,
-                onSortChange = { viewModel.setSortOrder(it) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 4.dp)
-                    .testTag("user_sort"),
             )
 
             when {
@@ -211,12 +188,24 @@ fun UserListScreen(
                     contentAlignment = Alignment.Center,
                 ) { CircularProgressIndicator(modifier = Modifier.testTag("user_list_loading")) }
 
-                state.error != null -> Text(
-                    text = state.error!!,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier
-                        .padding(Spacing.ScreenPadding)
-                        .testTag("user_list_error"),
+                state.error != null -> Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    SynapseEmptyState(
+                        title = state.error!!,
+                        icon = Icons.Filled.Person,
+                        errorTone = true,
+                        modifier = Modifier.testTag("user_list_error"),
+                    )
+                }
+
+                sortedUsers.isEmpty() && !state.isLoading -> SynapseEmptyState(
+                    title = stringResource(R.string.no_users),
+                    body = stringResource(R.string.no_users_body),
+                    icon = Icons.Filled.Person,
+                    actionLabel = stringResource(R.string.add_user),
+                    onAction = onAddUser,
                 )
 
                 else -> PullToRefreshBox(
@@ -225,20 +214,19 @@ fun UserListScreen(
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     UserList(
-                    serverUrl = serverUrl,
-                    users = sortedUsers,
-                    hasMore = state.hasMore,
-                    isLoadingMore = state.isLoadingMore,
-                    selectionMode = state.selectionMode,
-                    selectedUserIds = state.selectedUserIds,
-                    onUserClick = onUserClick,
-                    onLoadMore = { viewModel.loadNextPage() },
-                    onUserLongPress = { viewModel.enterSelectionMode(it) },
-                    onToggleUserSelection = { viewModel.toggleUserSelection(it) },
-                    onSelectAll = { viewModel.selectAllUsers() },
-                    onClearSelection = { viewModel.clearUserSelection() },
-                    currentUserId = state.currentUserId,
-                )
+                        users = sortedUsers,
+                        hasMore = state.hasMore,
+                        isLoadingMore = state.isLoadingMore,
+                        selectionMode = state.selectionMode,
+                        selectedUserIds = state.selectedUserIds,
+                        onUserClick = onUserClick,
+                        onLoadMore = { viewModel.loadNextPage() },
+                        onUserLongPress = { viewModel.enterSelectionMode(it) },
+                        onToggleUserSelection = { viewModel.toggleUserSelection(it) },
+                        onSelectAll = { viewModel.selectAllUsers() },
+                        onClearSelection = { viewModel.clearUserSelection() },
+                        currentUserId = state.currentUserId,
+                    )
                 }
             }
         }
@@ -246,45 +234,7 @@ fun UserListScreen(
 }
 
 @Composable
-private fun UserSortDropdown(
-    sortOrder: String,
-    onSortChange: (asc: Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val label = if (sortOrder == "name_asc") stringResource(R.string.name_az) else stringResource(R.string.name_za)
-    Box(modifier = modifier.clickable { expanded = true }) {
-        Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = Spacing.ScreenPadding, vertical = Spacing.FieldSpacing),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    stringResource(R.string.sort_by),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    label,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
-            Icon(Icons.Filled.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(text = { Text(stringResource(R.string.name_az)) }, onClick = { onSortChange(true); expanded = false })
-            DropdownMenuItem(text = { Text(stringResource(R.string.name_za)) }, onClick = { onSortChange(false); expanded = false })
-        }
-    }
-}
-
-@Composable
 private fun UserList(
-    serverUrl: String,
     users: List<UserSummary>,
     hasMore: Boolean,
     isLoadingMore: Boolean,
@@ -320,31 +270,24 @@ private fun UserList(
         if (selectionMode) {
             item(key = "select_all") {
                 val selectableUsers = currentUserId?.let { id -> users.filter { it.userId != id } } ?: users
-                val allSelectableSelected = selectableUsers.isNotEmpty() && selectableUsers.all { it.userId in selectedUserIds }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            if (allSelectableSelected) onClearSelection() else onSelectAll()
-                        }
-                        .padding(horizontal = Spacing.ScreenPadding, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Checkbox(
-                        checked = allSelectableSelected,
-                        onCheckedChange = { if (it) onSelectAll() else onClearSelection() },
-                        modifier = Modifier.testTag("user_select_all"),
-                    )
-                    Text(stringResource(R.string.select_all), style = MaterialTheme.typography.bodyLarge)
-                }
-                HorizontalDivider()
+                val allSelectableSelected =
+                    selectableUsers.isNotEmpty() && selectableUsers.all { it.userId in selectedUserIds }
+                SynapseListItem(
+                    headline = stringResource(R.string.select_all),
+                    leading = {
+                        Checkbox(
+                            checked = allSelectableSelected,
+                            onCheckedChange = { if (it) onSelectAll() else onClearSelection() },
+                            modifier = Modifier.testTag("user_select_all"),
+                        )
+                    },
+                    onClick = { if (allSelectableSelected) onClearSelection() else onSelectAll() },
+                )
             }
         }
         items(users, key = { it.userId }) { user ->
             val isCurrentUser = user.userId == currentUserId
             UserRow(
-                serverUrl = serverUrl,
                 user = user,
                 selectionMode = selectionMode,
                 selected = user.userId in selectedUserIds,
@@ -353,14 +296,13 @@ private fun UserList(
                 onLongPress = { if (!isCurrentUser) onUserLongPress(user.userId) },
                 onToggleSelection = { if (!isCurrentUser) onToggleUserSelection(user.userId) },
             )
-            HorizontalDivider()
         }
         if (isLoadingMore) {
             item {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(Spacing.TightSpacing),
+                        .padding(Tokens.Space.Md),
                     contentAlignment = Alignment.Center,
                 ) { CircularProgressIndicator() }
             }
@@ -370,7 +312,6 @@ private fun UserList(
 
 @Composable
 private fun UserRow(
-    serverUrl: String,
     user: UserSummary,
     selectionMode: Boolean,
     selected: Boolean,
@@ -379,59 +320,62 @@ private fun UserRow(
     onLongPress: () -> Unit,
     onToggleSelection: () -> Unit,
 ) {
-    val avatarUrl = mxcToDownloadUrl(serverUrl, user.avatarUrl)
-    ListItem(
-        leadingContent = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                if (selectionMode) {
-                    Checkbox(
-                        checked = selected,
-                        onCheckedChange = { onToggleSelection() },
-                        enabled = !isCurrentUser,
-                        modifier = Modifier.testTag("user_checkbox_${user.userId}"),
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (avatarUrl != null) {
-                        AsyncImage(
-                            model = avatarUrl,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(CircleShape),
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Filled.Person,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
-        },
-        headlineContent = { Text(user.userId) },
-        supportingContent = user.displayName?.let { { Text(it) } },
-        modifier = Modifier
-            .pointerInput(selectionMode, user.userId, isCurrentUser) {
-                detectTapGestures(
-                    onTap = {
-                        if (selectionMode && !isCurrentUser) onToggleSelection()
-                        else if (!selectionMode) onClick()
-                    },
-                    onLongPress = { if (!isCurrentUser) onLongPress() },
+    val c = SynapseTheme.colors
+    val headline = user.displayName ?: user.userId.substringAfter("@").substringBefore(":")
+
+    val statusTone: StatusTone? = when {
+        user.locked -> StatusTone.Warn
+        else -> null
+    }
+    val statusLabel: String? = when {
+        user.locked -> "Locked"
+        else -> null
+    }
+
+    val trailingContent: (@Composable () -> Unit)? = when {
+        selectionMode -> {
+            {
+                Checkbox(
+                    checked = selected,
+                    onCheckedChange = { onToggleSelection() },
+                    enabled = !isCurrentUser,
+                    modifier = Modifier.testTag("user_checkbox_${user.userId}"),
                 )
             }
-            .testTag("user_row_${user.userId}"),
+        }
+        statusTone != null && statusLabel != null -> {
+            { StatusChip(text = statusLabel, tone = statusTone) }
+        }
+        else -> null
+    }
+
+    SynapseListItem(
+        headline = headline,
+        supporting = user.userId,
+        supportingMono = true,
+        leading = {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(c.surface3),
+                contentAlignment = Alignment.Center,
+            ) {
+                val initial = headline.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
+                Text(
+                    text = initial,
+                    style = SynapseText.TitleS,
+                    color = c.text,
+                )
+            }
+        },
+        trailing = trailingContent,
+        onClick = {
+            if (selectionMode && !isCurrentUser) onToggleSelection()
+            else if (!selectionMode) onClick()
+        },
+        onLongClick = { if (!isCurrentUser) onLongPress() },
+        selected = selected && selectionMode,
+        modifier = Modifier.testTag("user_row_${user.userId}"),
     )
 }

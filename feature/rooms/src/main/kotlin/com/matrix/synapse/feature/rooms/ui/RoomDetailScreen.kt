@@ -3,29 +3,24 @@ package com.matrix.synapse.feature.rooms.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.TextButton
-import com.matrix.synapse.core.ui.SynapseTopBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -35,14 +30,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.res.stringResource
-import com.matrix.synapse.core.resources.R
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.compose.AsyncImage
+import com.matrix.synapse.core.resources.R
+import com.matrix.synapse.core.ui.SynapseTopBar
+import com.matrix.synapse.core.ui.components.DestructiveDialog
+import com.matrix.synapse.core.ui.components.SectionHeader
+import com.matrix.synapse.core.ui.components.StatusChip
+import com.matrix.synapse.core.ui.components.StatusTone
+import com.matrix.synapse.core.ui.components.SynapseButton
+import com.matrix.synapse.core.ui.components.SynapseButtonVariant
+import com.matrix.synapse.core.ui.components.SynapseCard
+import com.matrix.synapse.core.ui.components.SynapseListItem
+import com.matrix.synapse.core.ui.components.SynapseScaffold
+import com.matrix.synapse.core.ui.theme.SynapseText
+import com.matrix.synapse.core.ui.theme.SynapseTheme
+import com.matrix.synapse.core.ui.theme.Tokens
 import com.matrix.synapse.feature.rooms.data.DeleteRoomRequest
 import com.matrix.synapse.feature.rooms.data.mxcToDownloadUrl
 
@@ -67,176 +74,6 @@ fun RoomDetailScreen(
         if (state.deleteComplete) onBack()
     }
 
-    Scaffold(
-        topBar = {
-            SynapseTopBar(
-                title = state.room?.name ?: stringResource(R.string.room_detail),
-                onBack = onBack,
-            )
-        },
-    ) { padding ->
-        when {
-            state.isLoading && state.room == null -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-
-            state.error != null && state.room == null -> Text(
-                state.error!!,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(padding).padding(24.dp),
-            )
-
-            state.room != null -> {
-                val room = state.room!!
-                val roomAvatarUrl = mxcToDownloadUrl(serverUrl, room.avatar)
-                PullToRefreshBox(
-                    isRefreshing = state.isLoading,
-                    onRefresh = { viewModel.loadRoom(serverUrl, serverId, roomId) },
-                    modifier = Modifier.fillMaxSize().padding(padding),
-                ) {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    // Full-width avatar at top
-                    if (roomAvatarUrl != null) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp),
-                        ) {
-                            AsyncImage(
-                                model = roomAvatarUrl,
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop,
-                            )
-                        }
-                    }
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                    // Header card
-                    item {
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(room.name ?: stringResource(R.string.unnamed_room), style = MaterialTheme.typography.headlineSmall)
-                                if (room.topic != null) Text(room.topic, style = MaterialTheme.typography.bodyMedium)
-                                if (room.canonicalAlias != null) Text(room.canonicalAlias, style = MaterialTheme.typography.bodySmall)
-                                TextButton(onClick = { clipboardManager.setText(AnnotatedString(room.roomId)) }) {
-                                    Text(stringResource(R.string.copy_room_id, room.roomId), style = MaterialTheme.typography.bodySmall)
-                                }
-                            }
-                        }
-                    }
-
-                    // Info grid
-                    item {
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text(stringResource(R.string.room_info), style = MaterialTheme.typography.titleMedium)
-                                InfoRow("Version", room.version ?: "\u2014")
-                                InfoRow("Creator", room.creator ?: "\u2014")
-                                InfoRow("Join Rules", room.joinRules ?: "\u2014")
-                                InfoRow("Guest Access", room.guestAccess ?: "\u2014")
-                                InfoRow("History Visibility", room.historyVisibility ?: "\u2014")
-                                InfoRow("Federation", if (room.federatable) "Yes" else "No")
-                                InfoRow("Encryption", room.encryption ?: "None")
-                                InfoRow("State Events", room.stateEvents.toString())
-                                InfoRow("Members", "${room.joinedMembers} (${room.joinedLocalMembers} local)")
-                            }
-                        }
-                    }
-
-                    // Members section
-                    item {
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                TextButton(onClick = { membersExpanded = !membersExpanded }) {
-                                    Text(
-                                        if (membersExpanded) stringResource(R.string.hide_members_count, state.members.size)
-                                        else stringResource(R.string.show_members_count, state.members.size)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    if (membersExpanded) {
-                        items(state.members) { member ->
-                            Text(
-                                member,
-                                modifier = Modifier.padding(horizontal = 32.dp, vertical = 2.dp),
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    }
-
-                    // Status messages
-                    item {
-                        if (state.error != null) {
-                            Text(state.error!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.testTag("room_detail_error"))
-                        }
-                        if (state.actionMessage != null) {
-                            Text(state.actionMessage!!, color = MaterialTheme.colorScheme.primary)
-                        }
-                    }
-
-                    // Action buttons
-                    item {
-                        Card(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(stringResource(R.string.actions), style = MaterialTheme.typography.titleMedium)
-
-                                Button(
-                                    onClick = { viewModel.blockRoom(serverUrl, serverId, roomId, !state.isBlocked) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) { Text(if (state.isBlocked) stringResource(R.string.unblock_room) else stringResource(R.string.block_room)) }
-
-                                Button(
-                                    onClick = { showDeleteDialog = true },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                                    enabled = !state.isDeleting,
-                                ) { Text(if (state.isDeleting) stringResource(R.string.deleting) else stringResource(R.string.delete_room)) }
-
-                                Button(
-                                    onClick = { viewModel.makeRoomAdmin(serverUrl, serverId, roomId, null) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) { Text(stringResource(R.string.make_me_room_admin)) }
-
-                                Button(
-                                    onClick = onMedia,
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) { Text(stringResource(R.string.room_media)) }
-
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    OutlinedTextField(
-                                        value = joinUserId,
-                                        onValueChange = { joinUserId = it },
-                                        label = { Text(stringResource(R.string.user_id)) },
-                                        singleLine = true,
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                    Button(
-                                        onClick = {
-                                            viewModel.joinUserToRoom(serverUrl, serverId, roomId, joinUserId)
-                                            joinUserId = ""
-                                        },
-                                        enabled = joinUserId.isNotBlank(),
-                                    ) { Text(stringResource(R.string.join)) }
-                                }
-                            }
-                        }
-                    }
-                    }
-                }
-                }
-            }
-        }
-    }
-
     if (showDeleteDialog) {
         DeleteRoomDialog(
             onDismiss = { showDeleteDialog = false },
@@ -246,14 +83,327 @@ fun RoomDetailScreen(
             },
         )
     }
+
+    SynapseScaffold(
+        topBar = {
+            SynapseTopBar(
+                title = state.room?.name ?: stringResource(R.string.room_detail),
+                subtitle = roomId,
+                onBack = onBack,
+                actions = {
+                    IconButton(onClick = {}) {
+                        Icon(Icons.Filled.MoreVert, contentDescription = null)
+                    }
+                },
+            )
+        },
+    ) { padding ->
+        when {
+            state.isLoading && state.room == null -> Box(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+
+            state.error != null && state.room == null -> Text(
+                text = state.error!!,
+                color = SynapseTheme.colors.danger,
+                style = SynapseText.BodyM,
+                modifier = Modifier.padding(padding).padding(Tokens.Space.Xl),
+            )
+
+            state.room != null -> {
+                val room = state.room!!
+                PullToRefreshBox(
+                    isRefreshing = state.isLoading,
+                    onRefresh = { viewModel.loadRoom(serverUrl, serverId, roomId) },
+                    modifier = Modifier.fillMaxSize().padding(padding),
+                ) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(0.dp),
+                    ) {
+                        // ── Header card ───────────────────────────────────────────
+                        item {
+                            Spacer(Modifier.height(Tokens.Space.Lg))
+                            SynapseCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = Tokens.Space.ScreenEdge),
+                                padding = Tokens.Space.Lg,
+                            ) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(Tokens.Space.Sm),
+                                ) {
+                                    // Room icon — 64dp Surface3 box with # symbol
+                                    val c = SynapseTheme.colors
+                                    Box(
+                                        modifier = Modifier.size(64.dp),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Text(
+                                            text = "#",
+                                            style = SynapseText.Display,
+                                            color = c.textMuted,
+                                        )
+                                    }
+                                    Text(
+                                        text = room.name ?: stringResource(R.string.unnamed_room),
+                                        style = SynapseText.Title,
+                                        color = SynapseTheme.colors.text,
+                                    )
+                                    Text(
+                                        text = room.roomId,
+                                        style = SynapseText.Mono,
+                                        color = SynapseTheme.colors.textMuted,
+                                    )
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(Tokens.Space.Sm),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        StatusChip(
+                                            text = "${room.joinedMembers}",
+                                            tone = StatusTone.Neutral,
+                                        )
+                                        val (chipLabel, chipTone) = joinRuleChipDetail(room.joinRules)
+                                        StatusChip(text = chipLabel, tone = chipTone)
+                                    }
+                                }
+                            }
+                        }
+
+                        // ── Topic / Alias section ─────────────────────────────────
+                        if (room.topic != null || room.canonicalAlias != null) {
+                            item {
+                                SectionHeader(text = stringResource(R.string.room_info))
+                                SynapseCard(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = Tokens.Space.ScreenEdge),
+                                    padding = 0.dp,
+                                ) {
+                                    Column {
+                                        if (room.topic != null) {
+                                            SynapseListItem(
+                                                headline = stringResource(R.string.room_info),
+                                                supporting = room.topic,
+                                                showDivider = room.canonicalAlias != null,
+                                            )
+                                        }
+                                        if (room.canonicalAlias != null) {
+                                            SynapseListItem(
+                                                headline = room.canonicalAlias,
+                                                supportingMono = true,
+                                                showDivider = false,
+                                                onClick = {
+                                                    clipboardManager.setText(AnnotatedString(room.canonicalAlias))
+                                                },
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // ── State section ─────────────────────────────────────────
+                        item {
+                            SectionHeader(text = stringResource(R.string.actions))
+                            SynapseCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = Tokens.Space.ScreenEdge),
+                                padding = 0.dp,
+                            ) {
+                                Column {
+                                    if (room.isPublic) {
+                                        SynapseListItem(
+                                            headline = "Visibility",
+                                            trailing = {
+                                                StatusChip(text = "Public", tone = StatusTone.Success)
+                                            },
+                                            showDivider = true,
+                                        )
+                                    } else {
+                                        SynapseListItem(
+                                            headline = "Visibility",
+                                            trailing = {
+                                                StatusChip(text = "Private", tone = StatusTone.Neutral)
+                                            },
+                                            showDivider = true,
+                                        )
+                                    }
+                                    if (room.joinRules != null) {
+                                        val (label, tone) = joinRuleChipDetail(room.joinRules)
+                                        SynapseListItem(
+                                            headline = "Join Rule",
+                                            trailing = { StatusChip(text = label, tone = tone) },
+                                            showDivider = true,
+                                        )
+                                    }
+                                    if (room.historyVisibility != null) {
+                                        SynapseListItem(
+                                            headline = "History Visibility",
+                                            supporting = room.historyVisibility,
+                                            showDivider = true,
+                                        )
+                                    }
+                                    if (room.guestAccess != null) {
+                                        SynapseListItem(
+                                            headline = "Guest Access",
+                                            supporting = room.guestAccess,
+                                            showDivider = false,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // ── Members section ───────────────────────────────────────
+                        item {
+                            SectionHeader(text = stringResource(
+                                if (membersExpanded) R.string.hide_members_count
+                                else R.string.show_members_count,
+                                state.members.size,
+                            ))
+                            SynapseCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = Tokens.Space.ScreenEdge),
+                                padding = 0.dp,
+                            ) {
+                                SynapseListItem(
+                                    headline = if (membersExpanded)
+                                        stringResource(R.string.hide_members_count, state.members.size)
+                                    else
+                                        stringResource(R.string.show_members_count, state.members.size),
+                                    onClick = { membersExpanded = !membersExpanded },
+                                    showDivider = false,
+                                )
+                            }
+                        }
+                        if (membersExpanded) {
+                            items(state.members) { member ->
+                                SynapseListItem(
+                                    headline = member,
+                                    supportingMono = true,
+                                    modifier = Modifier.padding(start = Tokens.Space.Lg),
+                                )
+                            }
+                        }
+
+                        // ── Status messages ───────────────────────────────────────
+                        item {
+                            if (state.error != null) {
+                                Text(
+                                    text = state.error!!,
+                                    color = SynapseTheme.colors.danger,
+                                    style = SynapseText.BodyM,
+                                    modifier = Modifier
+                                        .padding(horizontal = Tokens.Space.ScreenEdge, vertical = Tokens.Space.Sm)
+                                        .testTag("room_detail_error"),
+                                )
+                            }
+                            if (state.actionMessage != null) {
+                                Text(
+                                    text = state.actionMessage!!,
+                                    color = SynapseTheme.colors.accent,
+                                    style = SynapseText.BodyM,
+                                    modifier = Modifier.padding(horizontal = Tokens.Space.ScreenEdge, vertical = Tokens.Space.Sm),
+                                )
+                            }
+                        }
+
+                        // ── Actions section ───────────────────────────────────────
+                        item {
+                            SectionHeader(text = stringResource(R.string.actions))
+                            SynapseCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = Tokens.Space.ScreenEdge),
+                                padding = Tokens.Space.Lg,
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.Sm)) {
+                                    SynapseButton(
+                                        text = if (state.isBlocked) stringResource(R.string.unblock_room) else stringResource(R.string.block_room),
+                                        onClick = { viewModel.blockRoom(serverUrl, serverId, roomId, !state.isBlocked) },
+                                        variant = SynapseButtonVariant.Outline,
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                    SynapseButton(
+                                        text = stringResource(R.string.make_me_room_admin),
+                                        onClick = { viewModel.makeRoomAdmin(serverUrl, serverId, roomId, null) },
+                                        variant = SynapseButtonVariant.Outline,
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                    SynapseButton(
+                                        text = stringResource(R.string.room_media),
+                                        onClick = onMedia,
+                                        variant = SynapseButtonVariant.Outline,
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(Tokens.Space.Sm),
+                                    ) {
+                                        OutlinedTextField(
+                                            value = joinUserId,
+                                            onValueChange = { joinUserId = it },
+                                            label = { Text(stringResource(R.string.user_id)) },
+                                            singleLine = true,
+                                            modifier = Modifier.weight(1f),
+                                        )
+                                        SynapseButton(
+                                            text = stringResource(R.string.join),
+                                            onClick = {
+                                                viewModel.joinUserToRoom(serverUrl, serverId, roomId, joinUserId)
+                                                joinUserId = ""
+                                            },
+                                            enabled = joinUserId.isNotBlank(),
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // ── Destructive section ───────────────────────────────────
+                        item {
+                            SectionHeader(text = "Destructive")
+                            SynapseCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = Tokens.Space.ScreenEdge),
+                                padding = Tokens.Space.Lg,
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(Tokens.Space.Sm)) {
+                                    SynapseButton(
+                                        text = if (state.isDeleting) stringResource(R.string.deleting) else stringResource(R.string.delete_room),
+                                        onClick = { showDeleteDialog = true },
+                                        variant = SynapseButtonVariant.Danger,
+                                        enabled = !state.isDeleting,
+                                        modifier = Modifier.fillMaxWidth(),
+                                    )
+                                }
+                            }
+                            Spacer(Modifier.height(Tokens.Space.Xl))
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
-@Composable
-private fun InfoRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.typography.bodyMedium)
-        Text(value, style = MaterialTheme.typography.bodyMedium)
-    }
+private fun joinRuleChipDetail(joinRules: String?): Pair<String, StatusTone> = when (joinRules?.lowercase()) {
+    "public"           -> "Public"     to StatusTone.Success
+    "invite"           -> "Invite"     to StatusTone.Info
+    "knock"            -> "Knock"      to StatusTone.Warn
+    "restricted"       -> "Restricted" to StatusTone.Accent
+    "knock_restricted" -> "Restricted" to StatusTone.Accent
+    null               -> "Unknown"    to StatusTone.Neutral
+    else               -> joinRules    to StatusTone.Neutral
 }
 
 @Composable
@@ -265,35 +415,12 @@ private fun DeleteRoomDialog(
     var block by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf("") }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.delete_room)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.delete_room_message))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = purge, onCheckedChange = { purge = it })
-                    Text(stringResource(R.string.purge_remove_all_traces))
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = block, onCheckedChange = { block = it })
-                    Text(stringResource(R.string.block_room))
-                }
-                OutlinedTextField(
-                    value = message,
-                    onValueChange = { message = it },
-                    label = { Text(stringResource(R.string.reason_optional)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(purge, block, message.takeIf { it.isNotBlank() }) },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-            ) { Text(stringResource(R.string.delete)) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    DestructiveDialog(
+        title = stringResource(R.string.delete_room),
+        body = stringResource(R.string.delete_room_message),
+        confirmLabel = stringResource(R.string.delete),
+        dismissLabel = stringResource(R.string.cancel),
+        onConfirm = { onConfirm(purge, block, message.takeIf { it.isNotBlank() }) },
+        onDismiss = onDismiss,
     )
 }

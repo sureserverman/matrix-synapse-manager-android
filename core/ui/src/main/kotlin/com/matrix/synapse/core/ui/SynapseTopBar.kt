@@ -14,12 +14,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -27,25 +27,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
-import com.matrix.synapse.core.resources.R
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.matrix.synapse.core.resources.R
+import com.matrix.synapse.core.ui.theme.SynapseText
+import com.matrix.synapse.core.ui.theme.SynapseTheme
 
-/** Matches list content horizontal padding so top bar title aligns with search field. */
-private val TopBarHorizontalPadding = 24.dp
+/** Matches list content horizontal padding so top bar title aligns with screen content. */
+private val TopBarHorizontalPadding = 20.dp
 
 /**
- * Shared top app bar with consistent styling across the app.
- * Uses Material 3 [TopAppBar] for proper elevation, window insets (status bar / edge-to-edge), and accessibility.
+ * Shared top app bar with Synapse Console styling — Surface background,
+ * 1dp Line bottom border, no shadow.
  *
- * **Server context:** On server-scoped screens, use this to show the current server only.
- * Pass the server display name as [title], server URL as [subtitle], and [onTitleClick] to
- * open the server list (manage servers). The title area then acts as a button to manage the server list.
- *
- * For non-server screens (e.g. "Security", "Room Detail"), pass a plain [title] and no [onTitleClick].
- * If [onBack] is set, a back arrow is shown. [actions] slot for overflow menu or other icons.
- *
- * @param titleCentered When true, uses [CenterAlignedTopAppBar] so the title is centered (e.g. for dashboard).
+ * Pass server display name as [title], server URL as [subtitle],
+ * and [onTitleClick] to open the server list (server switcher).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,8 +53,10 @@ fun SynapseTopBar(
     actions: @Composable RowScope.() -> Unit = {},
     titleCentered: Boolean = false,
 ) {
+    val c = SynapseTheme.colors
     val currentServerTapDesc = stringResource(R.string.current_server_tap)
     val backDesc = stringResource(R.string.back_nav)
+
     val titleContent = @Composable {
         Box(
             modifier = Modifier
@@ -75,27 +73,27 @@ fun SynapseTopBar(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                Column(modifier = Modifier.weight(1f, fill = true)) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                    )
-                    if (subtitle != null) {
+                    Column(modifier = Modifier.weight(1f, fill = true)) {
                         Text(
-                            text = subtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text = title,
+                            style = SynapseText.Title,
+                            color = c.text,
                             maxLines = 1,
                         )
+                        if (subtitle != null) {
+                            Text(
+                                text = subtitle,
+                                style = SynapseText.Mono,
+                                color = c.textMuted,
+                                maxLines = 1,
+                            )
+                        }
                     }
-                }
                     Icon(
                         imageVector = Icons.Filled.KeyboardArrowDown,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp),
+                        tint = c.textMuted,
+                        modifier = Modifier.size(20.dp),
                     )
                 }
             } else {
@@ -108,15 +106,15 @@ fun SynapseTopBar(
                 ) {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        style = SynapseText.Title,
+                        color = c.text,
                         maxLines = 1,
                     )
                     if (subtitle != null) {
                         Text(
                             text = subtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = SynapseText.BodyS,
+                            color = c.textMuted,
                             maxLines = 1,
                         )
                     }
@@ -133,7 +131,7 @@ fun SynapseTopBar(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = backDesc,
-                    tint = MaterialTheme.colorScheme.onSurface,
+                    tint = c.text,
                 )
             }
         }
@@ -143,29 +141,31 @@ fun SynapseTopBar(
         actions()
     }
     val colors = TopAppBarDefaults.topAppBarColors(
-        containerColor = MaterialTheme.colorScheme.surface,
-        titleContentColor = MaterialTheme.colorScheme.onSurface,
-        navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-        actionIconContentColor = MaterialTheme.colorScheme.onSurface,
+        containerColor = c.surface,
+        titleContentColor = c.text,
+        navigationIconContentColor = c.text,
+        actionIconContentColor = c.textMuted,
     )
     val windowInsets = TopAppBarDefaults.windowInsets
 
-    if (titleCentered) {
-        CenterAlignedTopAppBar(
-            modifier = Modifier,
-            title = titleContent,
-            navigationIcon = navigationIcon,
-            actions = actionsContent,
-            colors = colors,
-            windowInsets = windowInsets,
-        )
-    } else {
-        TopAppBar(
-            title = titleContent,
-            navigationIcon = navigationIcon,
-            actions = actionsContent,
-            colors = colors,
-            windowInsets = windowInsets,
-        )
+    Column {
+        if (titleCentered) {
+            CenterAlignedTopAppBar(
+                title = titleContent,
+                navigationIcon = navigationIcon,
+                actions = actionsContent,
+                colors = colors,
+                windowInsets = windowInsets,
+            )
+        } else {
+            TopAppBar(
+                title = titleContent,
+                navigationIcon = navigationIcon,
+                actions = actionsContent,
+                colors = colors,
+                windowInsets = windowInsets,
+            )
+        }
+        HorizontalDivider(color = c.line, thickness = 1.dp)
     }
 }
