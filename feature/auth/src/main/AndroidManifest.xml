@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application>
+
+        <!--
+          AppAuth's RedirectUriReceiverActivity is declared in the AppAuth library
+          manifest without an intent-filter. We override (tools:node="replace") to
+          attach the OAuth redirect intent-filter scoped to this app's scheme.
+
+          This manifest entry lives in :feature:auth — not :app — because AppAuth
+          is an implementation-scoped dependency of :feature:auth and the class
+          is visible only on this module's compile classpath. Placing the entry
+          here keeps lint happy on :app while still merging into the final
+          AndroidManifest.
+        -->
+        <activity
+            android:name="net.openid.appauth.RedirectUriReceiverActivity"
+            android:exported="true"
+            tools:node="replace">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="com.matrix.synapse.manager"
+                    android:host="oauth"
+                    android:path="/redirect" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>
