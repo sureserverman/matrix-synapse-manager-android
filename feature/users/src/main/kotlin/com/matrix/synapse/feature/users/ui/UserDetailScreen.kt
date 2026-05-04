@@ -35,7 +35,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import com.matrix.synapse.core.resources.R
+import com.matrix.synapse.feature.users.data.mxcToDownloadUrl
 import com.matrix.synapse.core.ui.SynapseTopBar
 import com.matrix.synapse.core.ui.components.DestructiveDialog
 import com.matrix.synapse.core.ui.components.SectionHeader
@@ -171,8 +173,7 @@ fun UserDetailScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(Tokens.Space.Sm),
                     ) {
-                        val initial = (user.displayName ?: user.userId)
-                            .firstOrNull()?.uppercaseChar()?.toString() ?: "?"
+                        val avatarUrl = mxcToDownloadUrl(serverUrl, user.avatarUrl)
                         Box(
                             modifier = Modifier
                                 .size(64.dp)
@@ -180,7 +181,19 @@ fun UserDetailScreen(
                                 .background(c.surface3),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(text = initial, style = SynapseText.Title, color = c.text)
+                            if (avatarUrl != null) {
+                                AsyncImage(
+                                    model = avatarUrl,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape),
+                                )
+                            } else {
+                                val initial = (user.displayName ?: user.userId)
+                                    .firstOrNull()?.uppercaseChar()?.toString() ?: "?"
+                                Text(text = initial, style = SynapseText.Title, color = c.text)
+                            }
                         }
                         if (user.displayName != null) {
                             Text(

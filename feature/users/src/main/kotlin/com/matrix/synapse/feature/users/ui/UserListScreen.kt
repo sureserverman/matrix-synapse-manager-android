@@ -57,6 +57,8 @@ import com.matrix.synapse.core.ui.theme.SynapseText
 import com.matrix.synapse.core.ui.theme.SynapseTheme
 import com.matrix.synapse.core.ui.theme.Tokens
 import com.matrix.synapse.feature.users.data.UserSummary
+import com.matrix.synapse.feature.users.data.mxcToDownloadUrl
+import coil3.compose.AsyncImage
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -215,6 +217,7 @@ fun UserListScreen(
                 ) {
                     UserList(
                         users = sortedUsers,
+                        serverUrl = serverUrl,
                         hasMore = state.hasMore,
                         isLoadingMore = state.isLoadingMore,
                         selectionMode = state.selectionMode,
@@ -236,6 +239,7 @@ fun UserListScreen(
 @Composable
 private fun UserList(
     users: List<UserSummary>,
+    serverUrl: String,
     hasMore: Boolean,
     isLoadingMore: Boolean,
     selectionMode: Boolean,
@@ -289,6 +293,7 @@ private fun UserList(
             val isCurrentUser = user.userId == currentUserId
             UserRow(
                 user = user,
+                serverUrl = serverUrl,
                 selectionMode = selectionMode,
                 selected = user.userId in selectedUserIds,
                 isCurrentUser = isCurrentUser,
@@ -313,6 +318,7 @@ private fun UserList(
 @Composable
 private fun UserRow(
     user: UserSummary,
+    serverUrl: String,
     selectionMode: Boolean,
     selected: Boolean,
     isCurrentUser: Boolean = false,
@@ -349,18 +355,22 @@ private fun UserRow(
         else -> null
     }
 
+    val avatarUrl = mxcToDownloadUrl(serverUrl, user.avatarUrl)
     SynapseListItem(
         headline = headline,
         supporting = user.userId,
         supportingMono = true,
+        leadingShape = CircleShape,
         leading = {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(c.surface3),
-                contentAlignment = Alignment.Center,
-            ) {
+            if (avatarUrl != null) {
+                AsyncImage(
+                    model = avatarUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape),
+                )
+            } else {
                 val initial = headline.firstOrNull()?.uppercaseChar()?.toString() ?: "?"
                 Text(
                     text = initial,

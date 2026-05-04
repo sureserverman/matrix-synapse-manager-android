@@ -1,5 +1,6 @@
 package com.matrix.synapse.feature.rooms.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
@@ -29,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -36,6 +39,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import com.matrix.synapse.core.resources.R
 import com.matrix.synapse.core.ui.SynapseTopBar
 import com.matrix.synapse.core.ui.components.DestructiveDialog
@@ -138,17 +142,30 @@ fun RoomDetailScreen(
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.spacedBy(Tokens.Space.Sm),
                                 ) {
-                                    // Room icon — 64dp Surface3 box with # symbol
                                     val c = SynapseTheme.colors
+                                    val roomAvatarUrl = mxcToDownloadUrl(serverUrl, room.avatar)
                                     Box(
-                                        modifier = Modifier.size(64.dp),
+                                        modifier = Modifier
+                                            .size(64.dp)
+                                            .clip(CircleShape)
+                                            .background(c.surface3),
                                         contentAlignment = Alignment.Center,
                                     ) {
-                                        Text(
-                                            text = "#",
-                                            style = SynapseText.Display,
-                                            color = c.textMuted,
-                                        )
+                                        if (roomAvatarUrl != null) {
+                                            AsyncImage(
+                                                model = roomAvatarUrl,
+                                                contentDescription = null,
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .clip(CircleShape),
+                                            )
+                                        } else {
+                                            Text(
+                                                text = "#",
+                                                style = SynapseText.Display,
+                                                color = c.textMuted,
+                                            )
+                                        }
                                     }
                                     Text(
                                         text = room.name ?: stringResource(R.string.unnamed_room),

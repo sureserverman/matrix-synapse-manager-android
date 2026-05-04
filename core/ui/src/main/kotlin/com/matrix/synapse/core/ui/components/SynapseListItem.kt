@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.matrix.synapse.core.ui.theme.SynapseText
@@ -44,6 +45,7 @@ fun SynapseListItem(
     supporting: String? = null,
     supportingMono: Boolean = false,
     leading: (@Composable () -> Unit)? = null,
+    leadingShape: Shape = RoundedCornerShape(Tokens.Radius.Sm),
     trailing: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
@@ -71,9 +73,9 @@ fun SynapseListItem(
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .clip(RoundedCornerShape(Tokens.Radius.Sm))
+                        .clip(leadingShape)
                         .background(c.surface3)
-                        .border(BorderStroke(1.dp, c.line), RoundedCornerShape(Tokens.Radius.Sm)),
+                        .border(BorderStroke(1.dp, c.line), leadingShape),
                     contentAlignment = Alignment.Center,
                 ) { leading() }
                 Spacer(Modifier.width(Tokens.Space.Md))

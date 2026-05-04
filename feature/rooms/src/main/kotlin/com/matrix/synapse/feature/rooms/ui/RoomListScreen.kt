@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Close
@@ -46,12 +47,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
 import com.matrix.synapse.core.resources.R
 import com.matrix.synapse.core.ui.Spacing
 import com.matrix.synapse.core.ui.SynapseTopBar
@@ -361,6 +364,7 @@ private fun RoomList(
         items(rooms, key = { it.roomId }) { room ->
             RoomRow(
                 room = room,
+                avatarUrl = roomAvatarUrls[room.roomId],
                 selectionMode = selectionMode,
                 selected = room.roomId in selectedRoomIds,
                 onClick = { onRoomClick(room.roomId) },
@@ -384,6 +388,7 @@ private fun RoomList(
 @Composable
 private fun RoomRow(
     room: RoomSummary,
+    avatarUrl: String?,
     selectionMode: Boolean,
     selected: Boolean,
     onClick: () -> Unit,
@@ -399,12 +404,21 @@ private fun RoomRow(
         supporting = "${room.roomId} · ${room.joinedMembers}",
         supportingMono = true,
         selected = selected,
+        leadingShape = CircleShape,
         leading = {
             if (selectionMode) {
                 Checkbox(
                     checked = selected,
                     onCheckedChange = { onToggleSelection() },
                     modifier = Modifier.testTag("room_checkbox_${room.roomId}"),
+                )
+            } else if (avatarUrl != null) {
+                AsyncImage(
+                    model = avatarUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(CircleShape),
                 )
             } else {
                 when {
