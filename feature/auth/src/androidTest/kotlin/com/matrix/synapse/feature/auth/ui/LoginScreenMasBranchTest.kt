@@ -39,6 +39,11 @@ private class FakeLoginViewModel(
     override val state: StateFlow<LoginState> get() = _stateOverride.asStateFlow()
 
     fun setState(s: LoginState) { _stateOverride.value = s }
+
+    // Override startLogin to a no-op so the LaunchedEffect on the screen does not
+    // invoke the production strategy resolver (whose mockk-relaxed return value
+    // is not a valid LoginStrategy and crashes the exhaustive `when`).
+    override fun startLogin(serverUrl: String, serverId: String) { /* no-op */ }
 }
 
 @RunWith(AndroidJUnit4::class)

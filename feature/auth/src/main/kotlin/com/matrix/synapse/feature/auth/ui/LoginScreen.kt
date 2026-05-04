@@ -72,7 +72,23 @@ fun LoginScreen(
     val currentState = state
     LaunchedEffect(currentState) {
         if (currentState is LoginState.AwaitingConsent) {
-            oauthLauncher.launch(currentState.authIntent)
+            // Defensive: a device with no browser/Custom Tabs has no activity to
+            // resolve the intent and would otherwise crash the app. Surface as a
+            // recoverable error instead.
+            try {
+                oauthLauncher.launch(currentState.authIntent)
+            } catch (e: android.content.ActivityNotFoundException) {
+                viewModel.onOauthFailed(
+                    net.openid.appauth.AuthorizationException(
+                        net.openid.appauth.AuthorizationException.TYPE_GENERAL_ERROR,
+                        net.openid.appauth.AuthorizationException.GeneralErrors.PROGRAM_CANCELED_AUTH_FLOW.code,
+                        "no_browser",
+                        e.message ?: "No browser available to handle OAuth consent",
+                        null,
+                        e,
+                    )
+                )
+            }
         }
     }
 
