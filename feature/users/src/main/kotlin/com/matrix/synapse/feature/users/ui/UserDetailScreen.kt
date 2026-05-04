@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -31,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -159,6 +161,21 @@ fun UserDetailScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(bottom = Tokens.Space.Xl),
             ) {
+                val avatarUrl = mxcToDownloadUrl(serverUrl, user.avatarUrl)
+
+                // ── Full-width avatar banner ─────────────────────────────
+                if (avatarUrl != null) {
+                    AsyncImage(
+                        model = avatarUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .background(c.surface3),
+                    )
+                }
+
                 // ── Header card ────────────────────────────────────────────
                 SynapseCard(
                     modifier = Modifier
@@ -173,23 +190,14 @@ fun UserDetailScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(Tokens.Space.Sm),
                     ) {
-                        val avatarUrl = mxcToDownloadUrl(serverUrl, user.avatarUrl)
-                        Box(
-                            modifier = Modifier
-                                .size(64.dp)
-                                .clip(CircleShape)
-                                .background(c.surface3),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            if (avatarUrl != null) {
-                                AsyncImage(
-                                    model = avatarUrl,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clip(CircleShape),
-                                )
-                            } else {
+                        if (avatarUrl == null) {
+                            Box(
+                                modifier = Modifier
+                                    .size(64.dp)
+                                    .clip(CircleShape)
+                                    .background(c.surface3),
+                                contentAlignment = Alignment.Center,
+                            ) {
                                 val initial = (user.displayName ?: user.userId)
                                     .firstOrNull()?.uppercaseChar()?.toString() ?: "?"
                                 Text(text = initial, style = SynapseText.Title, color = c.text)

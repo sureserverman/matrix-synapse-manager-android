@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -128,6 +129,23 @@ fun RoomDetailScreen(
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(0.dp),
                     ) {
+                        val roomAvatarUrl = mxcToDownloadUrl(serverUrl, room.avatar)
+
+                        // ── Full-width avatar banner ─────────────────────────
+                        if (roomAvatarUrl != null) {
+                            item {
+                                AsyncImage(
+                                    model = roomAvatarUrl,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp)
+                                        .background(SynapseTheme.colors.surface3),
+                                )
+                            }
+                        }
+
                         // ── Header card ───────────────────────────────────────────
                         item {
                             Spacer(Modifier.height(Tokens.Space.Lg))
@@ -143,23 +161,14 @@ fun RoomDetailScreen(
                                     verticalArrangement = Arrangement.spacedBy(Tokens.Space.Sm),
                                 ) {
                                     val c = SynapseTheme.colors
-                                    val roomAvatarUrl = mxcToDownloadUrl(serverUrl, room.avatar)
-                                    Box(
-                                        modifier = Modifier
-                                            .size(64.dp)
-                                            .clip(CircleShape)
-                                            .background(c.surface3),
-                                        contentAlignment = Alignment.Center,
-                                    ) {
-                                        if (roomAvatarUrl != null) {
-                                            AsyncImage(
-                                                model = roomAvatarUrl,
-                                                contentDescription = null,
-                                                modifier = Modifier
-                                                    .fillMaxSize()
-                                                    .clip(CircleShape),
-                                            )
-                                        } else {
+                                    if (roomAvatarUrl == null) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(64.dp)
+                                                .clip(CircleShape)
+                                                .background(c.surface3),
+                                            contentAlignment = Alignment.Center,
+                                        ) {
                                             Text(
                                                 text = "#",
                                                 style = SynapseText.Display,
