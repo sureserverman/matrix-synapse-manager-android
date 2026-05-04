@@ -10,11 +10,6 @@ import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
 
-data class LoginResult(
-    val userId: String,
-    val deviceId: String?,
-)
-
 class LoginUseCase @Inject constructor(
     private val retrofitFactory: RetrofitFactory,
     private val tokenStore: SecureTokenStore,
