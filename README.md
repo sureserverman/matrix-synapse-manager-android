@@ -20,6 +20,32 @@ A production-ready Android app for administering [Synapse](https://matrix.org/do
 - **Audit logging** — Destructive actions (deactivate, delete device/room/media, federation reset, etc.) are recorded locally in a Room database (no in-app audit viewer/export; re-verify before each release if you rely on this behavior).
 - **App lock** — Optional PIN gate on app resume; configurable in Settings.
 
+## Authentication
+
+The app supports two authentication paths against Synapse homeservers:
+
+1. **OAuth 2.0 + PKCE (MSC3861 / MAS)** — used automatically when the
+   homeserver advertises `org.matrix.msc2965.authentication` in its
+   `.well-known/matrix/client`. The app discovers the OIDC issuer, performs
+   dynamic client registration (RFC 7591), drives the auth-code flow with
+   PKCE-S256 in a Custom Tab, and requests the `urn:synapse:admin:*` scope.
+2. **Legacy password login** — used for non-MAS Synapse deployments.
+   `POST /_matrix/client/v3/login` with username + password.
+
+Tokens are persisted in `EncryptedSharedPreferences` (Android Keystore-backed).
+Refresh tokens issued by MAS are used transparently to keep sessions alive.
+
+### Synapse admin scope on MAS deployments
+
+Even after a successful OAuth login, the homeserver only grants
+`urn:synapse:admin:*` to users who have `can_request_admin = true` in MAS.
+If the scope is denied, the app surfaces a clear error and the operator must
+run on the MAS host:
+
+    mas-cli manage set-can-request-admin <username> --admin
+
+after which the user can log in again and obtain an admin-scoped token.
+
 ## Architecture
 
 ```

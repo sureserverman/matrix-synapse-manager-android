@@ -56,3 +56,17 @@ UI elements gated by a capability flag are hidden (not just disabled) when the c
 
 All admin API endpoints require the `Authorization: Bearer <access_token>` header.
 The token must belong to a Synapse **server administrator** account.
+
+## MAS / MSC3861 OAuth Support
+
+The app auto-detects Matrix Authentication Service (MAS) and switches to the
+OAuth 2.0 + PKCE flow when the homeserver advertises it.
+
+| Item | Detail |
+|---|---|
+| Detection | `org.matrix.msc2965.authentication` key present in `GET /.well-known/matrix/client` |
+| Auth metadata | `GET /_matrix/client/v1/auth_metadata` (MSC2965 endpoint) |
+| Required scope | `urn:synapse:admin:*` |
+| Client registration | RFC 7591 dynamic registration — no manual config required |
+| Supported MAS versions | Any version implementing MSC3861 (MAS 0.7+ in practice) |
+| Fallback | Servers without the well-known key fall back to password login |
