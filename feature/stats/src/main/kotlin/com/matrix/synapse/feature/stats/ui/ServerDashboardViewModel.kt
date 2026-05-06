@@ -85,17 +85,23 @@ class ServerDashboardViewModel @Inject constructor(
         _state.value = _state.value.copy(isLoading = true)
         viewModelScope.launch {
             activeTokenHolder.set(tokenStore.accessTokenFlow(serverId).first())
+            // Every async is individually runCatching-wrapped so a 403 (or any
+            // failure) on one endpoint does NOT cancel the siblings via structured
+            // concurrency. Without this, a non-admin token causes the dashboard to
+            // crash mid-load instead of degrading gracefully into "unknown" cells.
             runCatching {
-                val versionDef = async { statsRepository.getServerVersion(serverUrl) }
-                val totalUsersDef = async { statsRepository.getTotalUsers(serverUrl) }
-                val totalRoomsDef = async { statsRepository.getTotalRooms(serverUrl) }
-                val dauDef = async { statsRepository.getActiveUserCount(serverUrl, 24 * 60 * 60 * 1000L) }
-                val mauDef = async { statsRepository.getActiveUserCount(serverUrl, 30L * 24 * 60 * 60 * 1000L) }
+                val versionDef = async { runCatching { statsRepository.getServerVersion(serverUrl) }.getOrNull() }
+                val totalUsersDef = async { runCatching { statsRepository.getTotalUsers(serverUrl) }.getOrNull() }
+                val totalRoomsDef = async { runCatching { statsRepository.getTotalRooms(serverUrl) }.getOrNull() }
+                val dauDef = async { runCatching { statsRepository.getActiveUserCount(serverUrl, 24 * 60 * 60 * 1000L) }.getOrNull() }
+                val mauDef = async { runCatching { statsRepository.getActiveUserCount(serverUrl, 30L * 24 * 60 * 60 * 1000L) }.getOrNull() }
                 val dbStatsDef = async {
                     runCatching { statsRepository.getDatabaseRoomStats(serverUrl) }
                 }
                 val mediaDef = async {
-                    statsRepository.getMediaUsage(serverUrl, limit = 50, orderBy = "media_length", dir = "b")
+                    runCatching {
+                        statsRepository.getMediaUsage(serverUrl, limit = 50, orderBy = "media_length", dir = "b")
+                    }.getOrNull()
                 }
                 val totalMediaDef = async {
                     runCatching { statsRepository.getTotalMediaStorage(serverUrl) }.getOrNull()
@@ -130,12 +136,15 @@ class ServerDashboardViewModel @Inject constructor(
                 val displayList = rooms.take(20).map { r ->
                     LargestRoomDisplay(roomId = r.roomId, estimatedSize = r.estimatedSize)
                 }
+                // If every gated call failed, surface "not authorized" once at the top
+                // instead of leaving the user with a screen full of em-dashes.
+                val allAdminCallsFailed = version == null && totalUsers == null && totalRooms == null
                 _state.value = _state.value.copy(
-                    serverVersion = version.serverVersion,
-                    totalUsers = totalUsers,
-                    totalRooms = totalRooms,
-                    dau = dau,
-                    mau = mau,
+                    serverVersion = version?.serverVersion,
+                    totalUsers = totalUsers ?: 0L,
+                    totalRooms = totalRooms ?: 0,
+                    dau = dau ?: 0,
+                    mau = mau ?: 0,
                     totalMediaBytes = totalMedia,
                     federationDestinations = federationTotal,
                     federationFailures = federationFailing,
@@ -145,8 +154,9 @@ class ServerDashboardViewModel @Inject constructor(
                     largestRooms = rooms,
                     largestRoomsDisplay = displayList,
                     dbStatsUnavailable = dbStats.isFailure,
-                    topMediaUsers = media.users,
+                    topMediaUsers = media?.users ?: emptyList(),
                     isLoading = false,
+                    error = if (allAdminCallsFailed) "Not authorized — your account is not a Synapse server admin on this homeserver." else null,
                 )
                 // Load room name + avatar for largest rooms (best-effort)
                 if (displayList.isNotEmpty()) {
