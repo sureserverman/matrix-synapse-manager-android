@@ -2,6 +2,7 @@ package com.matrix.synapse.feature.auth.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,6 +63,8 @@ fun LoginScreen(
 
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var tokenInput by remember { mutableStateOf("") }
+    var tokenSectionExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(serverUrl) {
         viewModel.startLogin(serverUrl, serverId)
@@ -218,6 +221,78 @@ fun LoginScreen(
 
                 is LoginState.Success -> Unit
             }
+
+            // Token-paste alternative: available in every state except Success and the
+            // brief Loading window. Lets the user bypass strategy resolution entirely
+            // when they have a working token from another tool — useful if MAS strips
+            // admin scope from fresh password-flow tokens, or if password login is
+            // disabled, or if the server is in MSC3861-only mode.
+            if (currentState !is LoginState.Loading && currentState !is LoginState.Success) {
+                TokenLoginSection(
+                    expanded = tokenSectionExpanded,
+                    onToggle = { tokenSectionExpanded = !tokenSectionExpanded },
+                    token = tokenInput,
+                    onTokenChange = { tokenInput = it },
+                    onSubmit = { viewModel.submitToken(serverUrl, serverId, tokenInput) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TokenLoginSection(
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    token: String,
+    onTokenChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+) {
+    val c = SynapseTheme.colors
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(Tokens.Space.Md),
+    ) {
+        Text(
+            text = if (expanded) "▾ Use an existing access token" else "▸ Use an existing access token",
+            style = SynapseText.BodyS,
+            color = c.accent,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(Tokens.Radius.Sm))
+                .clickable { onToggle() }
+                .padding(vertical = Tokens.Space.Sm)
+                .testTag("login_token_section_toggle"),
+        )
+        if (expanded) {
+            Text(
+                text = "Paste a token from Element (Settings → Help & About → Advanced) or from your synapse-maintance-tasks config.cfg.",
+                style = SynapseText.BodyS,
+                color = c.textMuted,
+            )
+            Field(
+                value = token,
+                onValueChange = onTokenChange,
+                label = "Access token",
+                isPassword = true,
+                keyboardType = KeyboardType.Password,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("login_token_field"),
+            )
+            SynapseButton(
+                text = "Sign in with token",
+                onClick = onSubmit,
+                size = SynapseButtonSize.Lg,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag("login_token_button"),
+            )
+            Text(
+                text = "The token is validated against /_matrix/client/v3/account/whoami before being saved. It is stored in the Android Keystore the same way password-issued tokens are.",
+                style = SynapseText.BodyS,
+                color = c.textMuted,
+            )
         }
     }
 }

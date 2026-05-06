@@ -60,7 +60,12 @@ class LoginViewModelOAuthTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        viewModel = LoginViewModel(mockLoginUseCase, mockResolver, mockOAuthLoginUseCase)
+        viewModel = LoginViewModel(
+            mockLoginUseCase,
+            mockResolver,
+            mockOAuthLoginUseCase,
+            mockk(relaxed = true),
+        )
     }
 
     @After

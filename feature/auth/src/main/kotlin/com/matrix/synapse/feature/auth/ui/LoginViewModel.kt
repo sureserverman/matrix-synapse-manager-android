@@ -8,6 +8,7 @@ import com.matrix.synapse.feature.auth.domain.LoginStrategy
 import com.matrix.synapse.feature.auth.domain.LoginStrategyResolver
 import com.matrix.synapse.feature.auth.domain.LoginUseCase
 import com.matrix.synapse.feature.auth.domain.OAuthLoginUseCase
+import com.matrix.synapse.feature.auth.domain.TokenLoginUseCase
 import com.matrix.synapse.feature.auth.oauth.MasAdminScopeDeniedException
 import com.matrix.synapse.feature.auth.oauth.PendingOauth
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,6 +33,7 @@ open class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
     private val resolver: LoginStrategyResolver,
     private val oauthLoginUseCase: OAuthLoginUseCase,
+    private val tokenLoginUseCase: TokenLoginUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<LoginState>(LoginState.Idle)
@@ -87,6 +89,28 @@ open class LoginViewModel @Inject constructor(
     /** Legacy entry-point kept for call sites that haven't migrated to [startLogin]. */
     fun login(serverUrl: String, serverId: String, username: String, password: String) =
         submitPassword(serverUrl, serverId, username, password)
+
+    /**
+     * Alternative login: skip /_matrix/client/v3/login entirely and use a pre-existing
+     * access token. Validated via /_matrix/client/v3/account/whoami. Available on
+     * every server regardless of strategy — useful when the strategy resolver can't
+     * issue an admin-scoped token (e.g. MAS-fronted servers without can_request_admin)
+     * but the user already has a working token from another tool.
+     */
+    fun submitToken(serverUrl: String, serverId: String, token: String) {
+        if (token.isBlank()) {
+            _state.value = LoginState.Error("Access token must not be empty")
+            return
+        }
+        viewModelScope.launch {
+            _state.value = LoginState.Loading
+            val result = tokenLoginUseCase.login(serverUrl, serverId, token)
+            _state.value = result.fold(
+                onSuccess = { LoginState.Success(it) },
+                onFailure = { LoginState.Error(it.message ?: "Token login failed") },
+            )
+        }
+    }
 
     fun completeOauth(serverId: String, response: AuthorizationResponse) {
         val pending = pendingOauth ?: run {

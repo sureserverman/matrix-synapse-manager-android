@@ -29,7 +29,8 @@ private class FakeLoginViewModelForScope(
     loginUseCase: LoginUseCase = mockk(relaxed = true),
     resolver: LoginStrategyResolver = mockk(relaxed = true),
     oauthLoginUseCase: OAuthLoginUseCase = mockk(relaxed = true),
-) : LoginViewModel(loginUseCase, resolver, oauthLoginUseCase) {
+    tokenLoginUseCase: com.matrix.synapse.feature.auth.domain.TokenLoginUseCase = mockk(relaxed = true),
+) : LoginViewModel(loginUseCase, resolver, oauthLoginUseCase, tokenLoginUseCase) {
 
     private val _stateOverride = MutableStateFlow<LoginState>(initialState)
     override val state: StateFlow<LoginState> get() = _stateOverride.asStateFlow()
