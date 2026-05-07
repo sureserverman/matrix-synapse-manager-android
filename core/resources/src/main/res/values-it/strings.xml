@@ -70,6 +70,8 @@
     <string name="search_rooms">Cerca stanze</string>
     <string name="no_rooms">Nessuna stanza</string>
     <string name="no_rooms_body">Ancora nessuna stanza su questo server.</string>
+    <string name="no_users">Nessun utente</string>
+    <string name="no_users_body">Nessun utente da mostrare</string>
     <string name="rooms_count">%1$s • %2$d stanze</string>
     <string name="delete_rooms_title">Eliminare stanze?</string>
     <string name="delete_rooms_message">Eliminare %1$d stanza/e? Operazione irreversibile.</string>

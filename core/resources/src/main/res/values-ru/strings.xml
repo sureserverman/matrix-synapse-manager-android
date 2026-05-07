@@ -70,6 +70,8 @@
     <string name="search_rooms">Поиск комнат</string>
     <string name="no_rooms">Нет комнат</string>
     <string name="no_rooms_body">На этом сервере пока нет комнат.</string>
+    <string name="no_users">Нет пользователей</string>
+    <string name="no_users_body">Нет пользователей для отображения</string>
     <string name="rooms_count">%1$s • %2$d комнат</string>
     <string name="delete_rooms_title">Удалить комнаты?</string>
     <string name="delete_rooms_message">Удалить %1$d комнат? Это необратимо.</string>

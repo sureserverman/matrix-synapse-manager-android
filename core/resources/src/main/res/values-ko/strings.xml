@@ -70,6 +70,8 @@
     <string name="search_rooms">방 검색</string>
     <string name="no_rooms">방이 없습니다</string>
     <string name="no_rooms_body">이 서버에는 아직 방이 없습니다.</string>
+    <string name="no_users">사용자가 없습니다</string>
+    <string name="no_users_body">표시할 사용자가 없습니다</string>
     <string name="rooms_count">%1$s • %2$d개 방</string>
     <string name="delete_rooms_title">방을 삭제하시겠습니까?</string>
     <string name="delete_rooms_message">%1$d개 방을 삭제하시겠습니까? 되돌릴 수 없습니다.</string>

@@ -70,6 +70,8 @@
     <string name="search_rooms">搜索房间</string>
     <string name="no_rooms">暂无房间</string>
     <string name="no_rooms_body">此服务器上尚无房间。</string>
+    <string name="no_users">暂无用户</string>
+    <string name="no_users_body">没有可显示的用户</string>
     <string name="rooms_count">%1$s • %2$d 个房间</string>
     <string name="delete_rooms_title">删除房间？</string>
     <string name="delete_rooms_message">删除 %1$d 个房间？此操作不可撤销。</string>

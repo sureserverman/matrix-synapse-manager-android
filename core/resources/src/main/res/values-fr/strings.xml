@@ -70,6 +70,8 @@
     <string name="search_rooms">Rechercher des salons</string>
     <string name="no_rooms">Aucun salon</string>
     <string name="no_rooms_body">Aucun salon sur ce serveur pour l\'instant.</string>
+    <string name="no_users">Aucun utilisateur</string>
+    <string name="no_users_body">Aucun utilisateur à afficher</string>
     <string name="rooms_count">%1$s • %2$d salons</string>
     <string name="delete_rooms_title">Supprimer les salons ?</string>
     <string name="delete_rooms_message">Supprimer %1$d salon(s) ? Cette action est irréversible.</string>

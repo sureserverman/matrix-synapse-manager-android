@@ -70,6 +70,8 @@
     <string name="search_rooms">Pesquisar salas</string>
     <string name="no_rooms">Nenhuma sala</string>
     <string name="no_rooms_body">Ainda não há salas neste servidor.</string>
+    <string name="no_users">Nenhum usuário</string>
+    <string name="no_users_body">Nenhum usuário para mostrar</string>
     <string name="rooms_count">%1$s • %2$d salas</string>
     <string name="delete_rooms_title">Excluir salas?</string>
     <string name="delete_rooms_message">Excluir %1$d sala(s)? Isso não pode ser desfeito.</string>

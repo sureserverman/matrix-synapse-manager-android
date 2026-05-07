@@ -70,6 +70,8 @@
     <string name="search_rooms">Räume suchen</string>
     <string name="no_rooms">Keine Räume</string>
     <string name="no_rooms_body">Auf diesem Server gibt es noch keine Räume.</string>
+    <string name="no_users">Keine Nutzer</string>
+    <string name="no_users_body">Keine Nutzer anzuzeigen</string>
     <string name="rooms_count">%1$s • %2$d Räume</string>
     <string name="delete_rooms_title">Räume löschen?</string>
     <string name="delete_rooms_message">%1$d Raum/Räume löschen? Dies kann nicht rückgängig gemacht werden.</string>

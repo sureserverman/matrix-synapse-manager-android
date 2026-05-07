@@ -70,6 +70,8 @@
     <string name="search_rooms">ルームを検索</string>
     <string name="no_rooms">ルームがありません</string>
     <string name="no_rooms_body">このサーバーにはまだルームがありません。</string>
+    <string name="no_users">ユーザーがいません</string>
+    <string name="no_users_body">表示するユーザーがいません</string>
     <string name="rooms_count">%1$s • %2$d ルーム</string>
     <string name="delete_rooms_title">ルームを削除しますか？</string>
     <string name="delete_rooms_message">%1$d 件のルームを削除しますか？元に戻せません。</string>
