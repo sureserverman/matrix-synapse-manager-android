@@ -47,7 +47,7 @@ class UserRepository @Inject constructor(
         from: String? = null,
         limit: Int = 100,
         name: String? = null,
-        guests: Boolean? = null,
+        guests: Boolean = false,
         deactivated: Boolean? = null,
     ): UsersListResponse = api(serverUrl).listUsers(
         from = from,

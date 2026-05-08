@@ -15,7 +15,7 @@ interface UserAdminApi {
         @Query("from") from: String? = null,
         @Query("limit") limit: Int = 100,
         @Query("name") name: String? = null,
-        @Query("guests") guests: Boolean? = null,
+        @Query("guests") guests: Boolean = false,
         @Query("deactivated") deactivated: Boolean? = null,
     ): UsersListResponse
 

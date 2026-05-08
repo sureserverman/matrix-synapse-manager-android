@@ -1,0 +1,1 @@
+Fix Accounts screen returning HTTP 400 on Synapse homeservers that delegate authentication to MAS. Rooms, Info, Peers, Jobs, and Report were unaffected; only the user list was hitting the rejected default. (#3)

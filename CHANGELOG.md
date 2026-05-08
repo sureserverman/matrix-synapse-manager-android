@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2026-05-08
+
+### Fixed
+
+- Accounts screen returning HTTP 400 on MAS-delegated Synapse homeservers.
+  The `GET /_synapse/admin/v2/users` handler rejects requests when the
+  `guests` parameter resolves to its `True` default while auth delegation is
+  enabled (`"The guests parameter is not supported when delegating to MAS."`).
+  The app now sends `guests=false` explicitly. (#3)
+
 ## [1.3.0] - 2026-05-04
 
 ### Added
