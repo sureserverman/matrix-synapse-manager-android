@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.3] - 2026-05-10
+
+### Changed
+
+- Release APK now signs with v2/v3 schemes only; legacy v1 (JAR) signing is
+  disabled. Required for F-Droid reproducible-build verification under
+  `AllowedAPKSigningKeys` — leftover `META-INF/CERT.RSA`, `CERT.SF`, and
+  `MANIFEST.MF` files from v1 signing were causing F-Droid's content diff
+  against rebuilt-from-source APKs to fail. minSdk is 26, so v2/v3 covers
+  every supported device.
+
 ## [1.3.2] - 2026-05-08
 
 ### Fixed

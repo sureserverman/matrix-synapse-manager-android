@@ -1,0 +1,1 @@
+Drop legacy v1 (JAR) APK signing so F-Droid can publish the developer-signed APK directly via AllowedAPKSigningKeys. No functional change for users; v2/v3 signing scheme remains and supports all minSdk 26+ devices.
