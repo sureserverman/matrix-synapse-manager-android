@@ -172,6 +172,11 @@
     <string name="settings">Настройки</string>
     <string name="rearrange_tabs">Изменить порядок вкладок</string>
     <string name="drag_to_reorder">Перетащите для изменения порядка</string>
+    <string name="theme">Тема</string>
+    <string name="theme_system">Системная</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
+    <string name="theme_summary_system">Следовать настройкам устройства</string>
     <string name="app_lock">Блокировка приложения</string>
     <string name="change_pin">Изменить PIN</string>
     <string name="enter_pin_to_unlock">Введите PIN для разблокировки</string>

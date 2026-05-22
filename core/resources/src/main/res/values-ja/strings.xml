@@ -172,6 +172,11 @@
     <string name="settings">設定</string>
     <string name="rearrange_tabs">タブの並び替え</string>
     <string name="drag_to_reorder">ドラッグして並べ替え</string>
+    <string name="theme">テーマ</string>
+    <string name="theme_system">システムのデフォルト</string>
+    <string name="theme_light">ライト</string>
+    <string name="theme_dark">ダーク</string>
+    <string name="theme_summary_system">デバイスの設定に従う</string>
     <string name="app_lock">アプリロック</string>
     <string name="change_pin">PINを変更</string>
     <string name="enter_pin_to_unlock">PINを入力してロック解除</string>

@@ -172,6 +172,11 @@
     <string name="settings">설정</string>
     <string name="rearrange_tabs">탭 순서 변경</string>
     <string name="drag_to_reorder">드래그하여 순서 변경</string>
+    <string name="theme">테마</string>
+    <string name="theme_system">시스템 기본값</string>
+    <string name="theme_light">밝게</string>
+    <string name="theme_dark">어둡게</string>
+    <string name="theme_summary_system">기기 설정 따르기</string>
     <string name="app_lock">앱 잠금</string>
     <string name="change_pin">PIN 변경</string>
     <string name="enter_pin_to_unlock">잠금 해제 PIN 입력</string>

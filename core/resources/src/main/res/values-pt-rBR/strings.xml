@@ -172,6 +172,11 @@
     <string name="settings">Configurações</string>
     <string name="rearrange_tabs">Reordenar abas</string>
     <string name="drag_to_reorder">Arraste para reordenar</string>
+    <string name="theme">Tema</string>
+    <string name="theme_system">Padrão do sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Escuro</string>
+    <string name="theme_summary_system">Seguir configuração do dispositivo</string>
     <string name="app_lock">Bloqueio do app</string>
     <string name="change_pin">Alterar PIN</string>
     <string name="enter_pin_to_unlock">Digite o PIN para desbloquear</string>

@@ -172,6 +172,11 @@
     <string name="settings">Paramètres</string>
     <string name="rearrange_tabs">Réorganiser les onglets</string>
     <string name="drag_to_reorder">Glisser pour réordonner</string>
+    <string name="theme">Thème</string>
+    <string name="theme_system">Par défaut du système</string>
+    <string name="theme_light">Clair</string>
+    <string name="theme_dark">Sombre</string>
+    <string name="theme_summary_system">Suivre le réglage de l\'appareil</string>
     <string name="app_lock">Verrouillage de l\'app</string>
     <string name="change_pin">Changer le code PIN</string>
     <string name="enter_pin_to_unlock">Entrez le code PIN pour déverrouiller</string>

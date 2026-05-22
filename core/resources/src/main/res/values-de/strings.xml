@@ -172,6 +172,11 @@
     <string name="settings">Einstellungen</string>
     <string name="rearrange_tabs">Tabs anordnen</string>
     <string name="drag_to_reorder">Zum Sortieren ziehen</string>
+    <string name="theme">Design</string>
+    <string name="theme_system">Systemstandard</string>
+    <string name="theme_light">Hell</string>
+    <string name="theme_dark">Dunkel</string>
+    <string name="theme_summary_system">Geräteeinstellung folgen</string>
     <string name="app_lock">App-Sperre</string>
     <string name="change_pin">PIN ändern</string>
     <string name="enter_pin_to_unlock">PIN zum Entsperren eingeben</string>
