@@ -10,12 +10,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,7 +38,9 @@ import com.matrix.synapse.core.ui.components.SynapseScaffold
 import com.matrix.synapse.core.ui.components.SynapseToggle
 import com.matrix.synapse.core.ui.theme.SynapseText
 import com.matrix.synapse.core.ui.theme.SynapseTheme
+import com.matrix.synapse.core.ui.theme.ThemeMode
 import com.matrix.synapse.core.ui.theme.Tokens
+import com.matrix.synapse.feature.settings.appearance.AppearanceSettingsViewModel
 import com.matrix.synapse.feature.settings.security.AppLockManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -111,11 +114,13 @@ fun AppLockSettingsScreen(
     onRearrangeTabs: (() -> Unit)? = null,
     appVersion: String? = null,
     viewModel: AppLockSettingsViewModel = hiltViewModel(),
+    appearanceViewModel: AppearanceSettingsViewModel = hiltViewModel(),
 ) {
     val isEnabled by viewModel.isLockEnabled.collectAsStateWithLifecycle()
     val showCreatePin by viewModel.showCreatePin.collectAsStateWithLifecycle()
     val showChangePin by viewModel.showChangePin.collectAsStateWithLifecycle()
     val pinExists = viewModel.pinExists()
+    val themeMode by appearanceViewModel.themeMode.collectAsStateWithLifecycle()
 
     when {
         showCreatePin -> {
@@ -206,34 +211,53 @@ fun AppLockSettingsScreen(
                 }
 
                 // ── APPEARANCE ───────────────────────────────────────
-                onRearrangeTabs?.let { onNavigate ->
-                    SectionHeader("Appearance")
-                    SynapseCard(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = Tokens.Space.ScreenEdge),
-                        padding = 0.dp,
-                    ) {
-                        SynapseListItem(
-                            headline = stringResource(R.string.rearrange_tabs),
-                            supporting = "Reorder the bottom navigation tabs",
-                            leading = {
-                                Icon(
-                                    imageVector = Icons.Filled.Menu,
-                                    contentDescription = null,
-                                    tint = SynapseTheme.colors.textMuted,
-                                )
-                            },
-                            trailing = {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                    contentDescription = null,
-                                    tint = SynapseTheme.colors.textMuted,
-                                )
-                            },
-                            onClick = onNavigate,
-                            showDivider = false,
+                SectionHeader("Appearance")
+                SynapseCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Tokens.Space.ScreenEdge),
+                    padding = 0.dp,
+                ) {
+                    Column {
+                        ThemeModeRow(
+                            label = stringResource(R.string.theme_system),
+                            supporting = stringResource(R.string.theme_summary_system),
+                            selected = themeMode == ThemeMode.System,
+                            onSelect = { appearanceViewModel.setThemeMode(ThemeMode.System) },
                         )
+                        ThemeModeRow(
+                            label = stringResource(R.string.theme_light),
+                            selected = themeMode == ThemeMode.Light,
+                            onSelect = { appearanceViewModel.setThemeMode(ThemeMode.Light) },
+                        )
+                        ThemeModeRow(
+                            label = stringResource(R.string.theme_dark),
+                            selected = themeMode == ThemeMode.Dark,
+                            onSelect = { appearanceViewModel.setThemeMode(ThemeMode.Dark) },
+                            showDivider = onRearrangeTabs != null,
+                        )
+                        onRearrangeTabs?.let { onNavigate ->
+                            SynapseListItem(
+                                headline = stringResource(R.string.rearrange_tabs),
+                                supporting = "Reorder the bottom navigation tabs",
+                                leading = {
+                                    Icon(
+                                        imageVector = Icons.Filled.Menu,
+                                        contentDescription = null,
+                                        tint = SynapseTheme.colors.textMuted,
+                                    )
+                                },
+                                trailing = {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                        contentDescription = null,
+                                        tint = SynapseTheme.colors.textMuted,
+                                    )
+                                },
+                                onClick = onNavigate,
+                                showDivider = false,
+                            )
+                        }
                     }
                 }
 
@@ -271,4 +295,26 @@ fun AppLockSettingsScreen(
             }
         }
     }
+}
+
+@Composable
+private fun ThemeModeRow(
+    label: String,
+    selected: Boolean,
+    onSelect: () -> Unit,
+    supporting: String? = null,
+    showDivider: Boolean = true,
+) {
+    SynapseListItem(
+        headline = label,
+        supporting = supporting,
+        trailing = {
+            RadioButton(
+                selected = selected,
+                onClick = onSelect,
+            )
+        },
+        onClick = onSelect,
+        showDivider = showDivider,
+    )
 }

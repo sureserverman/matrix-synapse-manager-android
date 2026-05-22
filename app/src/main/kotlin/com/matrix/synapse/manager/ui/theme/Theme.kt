@@ -7,6 +7,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.matrix.synapse.core.ui.theme.SynapseAppTheme
+import com.matrix.synapse.core.ui.theme.ThemeMode
 
 /**
  * App-level theme. Delegates colours, typography, and shapes to the
@@ -17,7 +18,12 @@ import com.matrix.synapse.core.ui.theme.SynapseAppTheme
  */
 @Composable
 fun MatrixSynapseManagerTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: ThemeMode = ThemeMode.System,
+    darkTheme: Boolean = when (themeMode) {
+        ThemeMode.System -> isSystemInDarkTheme()
+        ThemeMode.Light -> false
+        ThemeMode.Dark -> true
+    },
     content: @Composable () -> Unit,
 ) {
     val view = LocalView.current

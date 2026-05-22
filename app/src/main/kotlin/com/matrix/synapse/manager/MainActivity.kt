@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.matrix.synapse.core.resources.R
+import com.matrix.synapse.feature.settings.appearance.ThemeModeRepository
 import com.matrix.synapse.feature.settings.security.AppLockManager
 import com.matrix.synapse.feature.settings.ui.PinEntryContent
 import com.matrix.synapse.manager.ui.theme.MatrixSynapseManagerTheme
@@ -32,11 +33,15 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var tabOrderRepository: TabOrderRepository
 
+    @Inject
+    lateinit var themeModeRepository: ThemeModeRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MatrixSynapseManagerTheme {
+            val themeMode by themeModeRepository.themeMode.collectAsStateWithLifecycle()
+            MatrixSynapseManagerTheme(themeMode = themeMode) {
                 val isLocked by appLockManager.isLocked.collectAsStateWithLifecycle()
                 if (isLocked) {
                     LockScreen(
