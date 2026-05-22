@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark counterpart of values/themes.xml. Material (dark) supplies a dark
+         colorBackground which both pre-12 windowBackground and the Android 12+
+         SplashScreen default (?attr/colorBackground) pick up — preventing the
+         white cold-launch flash reported in issue #5. -->
+    <style name="Theme.MatrixSynapseManager" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">?android:attr/colorBackground</item>
+    </style>
+</resources>
