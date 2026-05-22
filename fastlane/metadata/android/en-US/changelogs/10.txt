@@ -1,0 +1,2 @@
+New:
+- Settings → Appearance now has a Theme picker. Choose System default, Light, or Dark — the in-app UI applies the choice immediately and remembers it across launches. (Note: the OS-rendered launch splash still follows the device dark-mode setting.)
