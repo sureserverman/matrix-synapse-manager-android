@@ -1,0 +1,2 @@
+Translations:
+- The Theme picker added in 1.3.5 (Settings → Appearance) now has full translations for de, es, fr, it, ja, ko, pt-BR, ru, uk, and zh. No functional changes.
