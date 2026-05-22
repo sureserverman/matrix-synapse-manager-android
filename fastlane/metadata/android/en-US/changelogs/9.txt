@@ -1,0 +1,3 @@
+Fixes:
+- Dark mode: cold-launch splash window no longer flashes white on dark-themed devices. (#5)
+- MAS auth detection: app now recognises MAS-fronted homeservers that do not advertise the discovery key in /.well-known/matrix/client, by probing /_matrix/client/v1/auth_metadata (and the unstable MSC2965 path) as a fallback. (#4)
