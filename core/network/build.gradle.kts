@@ -24,6 +24,11 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    buildFeatures {
+        // Needed so NetworkModule can gate verbose OkHttp body logging on BuildConfig.DEBUG.
+        buildConfig = true
+    }
 }
 
 dependencies {

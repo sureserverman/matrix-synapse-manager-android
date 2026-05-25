@@ -15,9 +15,25 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val PIN_LENGTH = 4
-private const val PBKDF2_ITERATIONS = 10_000
+
+// verifyPin() runs on the UI thread, so iterations are bounded to keep unlock responsive
+// on low-end devices (~10x the old cost). For a 4-digit PIN the primary brute-force defence
+// is the attempt lockout below, not the KDF cost. Hashes written before this change are
+// verified with their original iteration count (read from KEY_ITERATIONS, defaulting to
+// LEGACY_PBKDF2_ITERATIONS) so existing PINs keep working; a PIN re-set upgrades it.
+private const val PBKDF2_ITERATIONS = 100_000
+private const val LEGACY_PBKDF2_ITERATIONS = 10_000
+
+// After MAX_FAILED_ATTEMPTS consecutive wrong PINs, reject all input (even a correct PIN)
+// for LOCKOUT_MS to throttle online guessing of the 10_000-value PIN space.
+private const val MAX_FAILED_ATTEMPTS = 5
+private const val LOCKOUT_MS = 30_000L
+
 private const val KEY_SALT = "pin_salt"
 private const val KEY_HASH = "pin_hash"
+private const val KEY_ITERATIONS = "pin_iterations"
+private const val KEY_FAILED_ATTEMPTS = "pin_failed_attempts"
+private const val KEY_LOCKOUT_UNTIL = "pin_lockout_until"
 
 @Singleton
 class DefaultAppLockManager @Inject constructor(
@@ -48,27 +64,38 @@ class DefaultAppLockManager @Inject constructor(
     override suspend fun setPin(pin: String) {
         require(pin.length == PIN_LENGTH) { "PIN must be $PIN_LENGTH digits" }
         val salt = ByteArray(16).also { SecureRandom().nextBytes(it) }
-        val hash = hashPin(pin, salt)
+        val hash = hashPin(pin, salt, PBKDF2_ITERATIONS)
         encryptedPrefs.edit()
             .putString(KEY_SALT, Base64.getEncoder().encodeToString(salt))
             .putString(KEY_HASH, Base64.getEncoder().encodeToString(hash))
+            .putInt(KEY_ITERATIONS, PBKDF2_ITERATIONS)
+            .remove(KEY_FAILED_ATTEMPTS)
+            .remove(KEY_LOCKOUT_UNTIL)
             .apply()
     }
 
     override fun verifyPin(pin: String): Boolean {
+        // Refuse all input (even a correct PIN) while locked out after too many failures.
+        if (System.currentTimeMillis() < encryptedPrefs.getLong(KEY_LOCKOUT_UNTIL, 0L)) return false
         if (pin.length != PIN_LENGTH) return false
         val saltB64 = encryptedPrefs.getString(KEY_SALT, null) ?: return false
         val storedHashB64 = encryptedPrefs.getString(KEY_HASH, null) ?: return false
+        val iterations = encryptedPrefs.getInt(KEY_ITERATIONS, LEGACY_PBKDF2_ITERATIONS)
         val salt = Base64.getDecoder().decode(saltB64)
         val storedHash = Base64.getDecoder().decode(storedHashB64)
-        val computedHash = hashPin(pin, salt)
-        return constantTimeEquals(storedHash, computedHash)
+        val computedHash = hashPin(pin, salt, iterations)
+        val matches = constantTimeEquals(storedHash, computedHash)
+        if (matches) recordSuccess() else recordFailure()
+        return matches
     }
 
     override suspend fun clearPin() {
         encryptedPrefs.edit()
             .remove(KEY_SALT)
             .remove(KEY_HASH)
+            .remove(KEY_ITERATIONS)
+            .remove(KEY_FAILED_ATTEMPTS)
+            .remove(KEY_LOCKOUT_UNTIL)
             .apply()
     }
 
@@ -86,11 +113,31 @@ class DefaultAppLockManager @Inject constructor(
         _isLocked.value = false
     }
 
-    private fun hashPin(pin: String, salt: ByteArray): ByteArray {
+    private fun recordSuccess() {
+        encryptedPrefs.edit()
+            .remove(KEY_FAILED_ATTEMPTS)
+            .remove(KEY_LOCKOUT_UNTIL)
+            .apply()
+    }
+
+    private fun recordFailure() {
+        val attempts = encryptedPrefs.getInt(KEY_FAILED_ATTEMPTS, 0) + 1
+        val editor = encryptedPrefs.edit()
+        if (attempts >= MAX_FAILED_ATTEMPTS) {
+            // Start a lockout window and reset the counter so the next window is a fresh 5 tries.
+            editor.putInt(KEY_FAILED_ATTEMPTS, 0)
+                .putLong(KEY_LOCKOUT_UNTIL, System.currentTimeMillis() + LOCKOUT_MS)
+        } else {
+            editor.putInt(KEY_FAILED_ATTEMPTS, attempts)
+        }
+        editor.apply()
+    }
+
+    private fun hashPin(pin: String, salt: ByteArray, iterations: Int): ByteArray {
         val spec = PBEKeySpec(
             pin.toCharArray(),
             salt,
-            PBKDF2_ITERATIONS,
+            iterations,
             256,
         )
         val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")

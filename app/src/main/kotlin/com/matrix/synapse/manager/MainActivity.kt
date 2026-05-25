@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.matrix.synapse.core.resources.R
+import com.matrix.synapse.core.ui.SecureScreenEffect
 import com.matrix.synapse.feature.settings.appearance.ThemeModeRepository
 import com.matrix.synapse.feature.settings.security.AppLockManager
 import com.matrix.synapse.feature.settings.ui.PinEntryContent
@@ -69,6 +70,9 @@ private fun LockScreen(
     verifyPin: (String) -> Boolean,
     onUnlock: () -> Unit,
 ) {
+    // Keep the PIN entry screen out of recents thumbnails and screen recordings.
+    SecureScreenEffect()
+
     var wrongPin by remember { mutableStateOf(false) }
     Box(
         modifier = Modifier.fillMaxSize(),

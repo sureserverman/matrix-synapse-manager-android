@@ -32,7 +32,14 @@ object NetworkModule {
     @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor =
         HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            // Token-refresh / login response BODIES carry access_token & refresh_token in JSON,
+            // which redactHeader() does NOT cover. Only log bodies in debug builds so release
+            // APKs never write server-admin tokens to Logcat (CWE-532).
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
             redactHeader("Authorization")
         }
 

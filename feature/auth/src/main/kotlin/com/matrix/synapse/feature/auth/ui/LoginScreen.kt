@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.matrix.synapse.core.resources.R
+import com.matrix.synapse.core.ui.SecureScreenEffect
 import com.matrix.synapse.core.ui.SynapseTopBar
 import com.matrix.synapse.core.ui.components.Field
 import com.matrix.synapse.core.ui.components.SynapseButton
@@ -58,6 +59,10 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
+    // Login shows a password field and an admin-token paste field — keep it out of
+    // recents thumbnails and screen recordings.
+    SecureScreenEffect()
+
     val state by viewModel.state.collectAsStateWithLifecycle()
     val c = SynapseTheme.colors
 
