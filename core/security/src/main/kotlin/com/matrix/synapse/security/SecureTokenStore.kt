@@ -10,6 +10,12 @@ import kotlinx.coroutines.flow.Flow
  * savePassword method on this interface.
  */
 interface SecureTokenStore {
+    /**
+     * Eagerly initialises the store, running any pending one-time migration. Safe to call off the
+     * main thread at startup so existing data is re-encrypted before the first token read.
+     */
+    fun warmUp() {}
+
     /** Emits the current access token for [serverId], or null if none stored. */
     fun accessTokenFlow(serverId: String): Flow<String?>
 

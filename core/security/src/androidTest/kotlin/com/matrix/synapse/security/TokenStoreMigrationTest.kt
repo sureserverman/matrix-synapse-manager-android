@@ -72,6 +72,19 @@ class TokenStoreMigrationTest {
         assertFileDoesNotExist("secure_token_store")
     }
 
+    @Test
+    fun warm_up_triggers_migration_without_a_flow_read() = runBlocking {
+        openLegacy().edit().putString("access_$serverId", "syt_warm").commit()
+        assertFileExists("secure_token_store")
+
+        val store = TokenStoreImpl(context, KeystoreCrypto())
+        store.warmUp()
+
+        // warmUp() alone migrated and dropped the legacy file (no flow was collected first).
+        assertFileDoesNotExist("secure_token_store")
+        assertEquals("syt_warm", store.accessTokenFlow(serverId).first())
+    }
+
     private fun openLegacy() = EncryptedSharedPreferences.create(
         context,
         "secure_token_store",

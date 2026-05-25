@@ -59,7 +59,8 @@ dependencies {
 
     implementation(libs.coroutines.android)
     // DEPRECATED: kept only for the one-time legacy migration in DefaultAppLockManager.
-    // TODO(next release): once installs have migrated, delete the migration code and this dep.
+    // TODO: keep for several releases — F-Droid users update irregularly and a user who skips the
+    // migration release would otherwise lose their PIN. Only then delete the migration code + dep.
     implementation(libs.security.crypto)
 
     testImplementation(libs.bundles.unit.test)

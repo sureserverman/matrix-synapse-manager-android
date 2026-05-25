@@ -49,6 +49,11 @@ class TokenStoreImpl @Inject constructor(
         _state.value = Unit
     }
 
+    override fun warmUp() {
+        // Touching the lazy prefs forces initialization, which runs the one-time migration.
+        prefs.contains(KEY_MIGRATED)
+    }
+
     override fun accessTokenFlow(serverId: String): Flow<String?> =
         _state.map { readString(accessKey(serverId)) }
 

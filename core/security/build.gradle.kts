@@ -33,7 +33,8 @@ dependencies {
     // Token encryption uses KeystoreCrypto (Android Keystore) directly; ciphertext is held in
     // plain SharedPreferences.
     // DEPRECATED: security-crypto is kept only for the one-time legacy migration in TokenStoreImpl.
-    // TODO(next release): once installs have migrated, delete the migration code and this dep.
+    // TODO: keep for several releases — F-Droid users update irregularly and a user who skips the
+    // migration release would otherwise lose their session. Only then delete the migration code + dep.
     implementation(libs.security.crypto)
 
     // Coroutines
