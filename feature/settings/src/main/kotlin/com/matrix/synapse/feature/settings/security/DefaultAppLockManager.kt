@@ -1,12 +1,15 @@
 package com.matrix.synapse.feature.settings.security
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import com.matrix.synapse.security.KeystoreCrypto
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.io.File
 import java.security.SecureRandom
 import java.util.Base64
 import javax.crypto.SecretKeyFactory
@@ -35,40 +38,44 @@ private const val KEY_ITERATIONS = "pin_iterations"
 private const val KEY_FAILED_ATTEMPTS = "pin_failed_attempts"
 private const val KEY_LOCKOUT_UNTIL = "pin_lockout_until"
 
+/**
+ * App-lock PIN store.
+ *
+ * Every value is encrypted with [KeystoreCrypto] (AES-256-GCM via the Android Keystore) and held
+ * as ciphertext in a plain [SharedPreferences] file — replacing the deprecated
+ * androidx.security:security-crypto. Encrypting authenticated values (not just the PIN hash) keeps
+ * `lock_enabled` tamper-resistant: an attacker with filesystem access cannot forge it to false to
+ * bypass the lock. On upgrade, [migrateIfNeeded] copies the legacy EncryptedSharedPreferences file
+ * into this store once and deletes it.
+ */
 @Singleton
 class DefaultAppLockManager @Inject constructor(
-    @ApplicationContext context: Context,
+    @ApplicationContext private val context: Context,
+    private val crypto: KeystoreCrypto,
 ) : AppLockManager {
 
-    private val masterKey = MasterKey.Builder(context)
-        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-        .build()
+    private val prefs: SharedPreferences by lazy {
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .also { migrateIfNeeded(it) }
+    }
 
-    private val encryptedPrefs = EncryptedSharedPreferences.create(
-        context,
-        PREFS_NAME,
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-    )
-
-    private val _isLockEnabled = MutableStateFlow(encryptedPrefs.getBoolean(KEY_ENABLED, false))
+    private val _isLockEnabled = MutableStateFlow(getBoolDec(KEY_ENABLED, false))
     override val isLockEnabled: StateFlow<Boolean> = _isLockEnabled.asStateFlow()
 
     private val _isLocked = MutableStateFlow(_isLockEnabled.value)
     override val isLocked: StateFlow<Boolean> = _isLocked.asStateFlow()
 
     override fun pinExists(): Boolean =
-        encryptedPrefs.contains(KEY_HASH)
+        prefs.contains(KEY_HASH)
 
     override suspend fun setPin(pin: String) {
         require(pin.length == PIN_LENGTH) { "PIN must be $PIN_LENGTH digits" }
         val salt = ByteArray(16).also { SecureRandom().nextBytes(it) }
         val hash = hashPin(pin, salt, PBKDF2_ITERATIONS)
-        encryptedPrefs.edit()
-            .putString(KEY_SALT, Base64.getEncoder().encodeToString(salt))
-            .putString(KEY_HASH, Base64.getEncoder().encodeToString(hash))
-            .putInt(KEY_ITERATIONS, PBKDF2_ITERATIONS)
+        prefs.edit()
+            .putString(KEY_SALT, crypto.encrypt(Base64.getEncoder().encodeToString(salt)))
+            .putString(KEY_HASH, crypto.encrypt(Base64.getEncoder().encodeToString(hash)))
+            .putString(KEY_ITERATIONS, crypto.encrypt(PBKDF2_ITERATIONS.toString()))
             .remove(KEY_FAILED_ATTEMPTS)
             .remove(KEY_LOCKOUT_UNTIL)
             .apply()
@@ -76,11 +83,11 @@ class DefaultAppLockManager @Inject constructor(
 
     override fun verifyPin(pin: String): Boolean {
         // Refuse all input (even a correct PIN) while locked out after too many failures.
-        if (System.currentTimeMillis() < encryptedPrefs.getLong(KEY_LOCKOUT_UNTIL, 0L)) return false
+        if (System.currentTimeMillis() < getLongDec(KEY_LOCKOUT_UNTIL, 0L)) return false
         if (pin.length != PIN_LENGTH) return false
-        val saltB64 = encryptedPrefs.getString(KEY_SALT, null) ?: return false
-        val storedHashB64 = encryptedPrefs.getString(KEY_HASH, null) ?: return false
-        val iterations = encryptedPrefs.getInt(KEY_ITERATIONS, LEGACY_PBKDF2_ITERATIONS)
+        val saltB64 = getDec(KEY_SALT) ?: return false
+        val storedHashB64 = getDec(KEY_HASH) ?: return false
+        val iterations = getIntDec(KEY_ITERATIONS, LEGACY_PBKDF2_ITERATIONS)
         val salt = Base64.getDecoder().decode(saltB64)
         val storedHash = Base64.getDecoder().decode(storedHashB64)
         val computedHash = hashPin(pin, salt, iterations)
@@ -90,7 +97,7 @@ class DefaultAppLockManager @Inject constructor(
     }
 
     override suspend fun clearPin() {
-        encryptedPrefs.edit()
+        prefs.edit()
             .remove(KEY_SALT)
             .remove(KEY_HASH)
             .remove(KEY_ITERATIONS)
@@ -100,7 +107,7 @@ class DefaultAppLockManager @Inject constructor(
     }
 
     override suspend fun setEnabled(enabled: Boolean) {
-        encryptedPrefs.edit().putBoolean(KEY_ENABLED, enabled).apply()
+        prefs.edit().putString(KEY_ENABLED, crypto.encrypt(enabled.toString())).apply()
         _isLockEnabled.value = enabled
         if (!enabled) _isLocked.value = false
     }
@@ -114,21 +121,21 @@ class DefaultAppLockManager @Inject constructor(
     }
 
     private fun recordSuccess() {
-        encryptedPrefs.edit()
+        prefs.edit()
             .remove(KEY_FAILED_ATTEMPTS)
             .remove(KEY_LOCKOUT_UNTIL)
             .apply()
     }
 
     private fun recordFailure() {
-        val attempts = encryptedPrefs.getInt(KEY_FAILED_ATTEMPTS, 0) + 1
-        val editor = encryptedPrefs.edit()
+        val attempts = getIntDec(KEY_FAILED_ATTEMPTS, 0) + 1
+        val editor = prefs.edit()
         if (attempts >= MAX_FAILED_ATTEMPTS) {
             // Start a lockout window and reset the counter so the next window is a fresh 5 tries.
-            editor.putInt(KEY_FAILED_ATTEMPTS, 0)
-                .putLong(KEY_LOCKOUT_UNTIL, System.currentTimeMillis() + LOCKOUT_MS)
+            editor.putString(KEY_FAILED_ATTEMPTS, crypto.encrypt("0"))
+                .putString(KEY_LOCKOUT_UNTIL, crypto.encrypt((System.currentTimeMillis() + LOCKOUT_MS).toString()))
         } else {
-            editor.putInt(KEY_FAILED_ATTEMPTS, attempts)
+            editor.putString(KEY_FAILED_ATTEMPTS, crypto.encrypt(attempts.toString()))
         }
         editor.apply()
     }
@@ -152,8 +159,64 @@ class DefaultAppLockManager @Inject constructor(
         return result == 0
     }
 
+    private fun getDec(key: String): String? = prefs.getString(key, null)?.let { crypto.decrypt(it) }
+    private fun getBoolDec(key: String, default: Boolean): Boolean = getDec(key)?.toBooleanStrictOrNull() ?: default
+    private fun getIntDec(key: String, default: Int): Int = getDec(key)?.toIntOrNull() ?: default
+    private fun getLongDec(key: String, default: Long): Long = getDec(key)?.toLongOrNull() ?: default
+
+    /**
+     * One-time copy of the legacy EncryptedSharedPreferences app-lock data into this store. Each
+     * value is re-encrypted through [KeystoreCrypto] as a string. Resilient: any failure is
+     * swallowed (worst case: the user re-sets their PIN) and the legacy file dropped.
+     */
+    private fun migrateIfNeeded(newPrefs: SharedPreferences) {
+        if (newPrefs.getBoolean(KEY_MIGRATED, false)) return
+        if (!legacyPrefsFileExists()) {
+            newPrefs.edit().putBoolean(KEY_MIGRATED, true).apply()
+            return
+        }
+        try {
+            val legacy = openLegacyPrefs()
+            val editor = newPrefs.edit()
+            for ((key, value) in legacy.all) {
+                val asString = when (value) {
+                    is String -> value
+                    is Boolean -> value.toString()
+                    is Int -> value.toString()
+                    is Long -> value.toString()
+                    else -> null
+                }
+                if (asString != null) editor.putString(key, crypto.encrypt(asString))
+            }
+            editor.putBoolean(KEY_MIGRATED, true).apply()
+        } catch (e: Exception) {
+            android.util.Log.w("AppLockMigration", "legacy app-lock migration failed: ${e.javaClass.simpleName}", e)
+            newPrefs.edit().putBoolean(KEY_MIGRATED, true).apply()
+        } finally {
+            context.deleteSharedPreferences(LEGACY_PREFS_NAME)
+        }
+    }
+
+    private fun legacyPrefsFileExists(): Boolean =
+        File(File(context.applicationInfo.dataDir, "shared_prefs"), "$LEGACY_PREFS_NAME.xml").exists()
+
+    private fun openLegacyPrefs(): SharedPreferences {
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        return EncryptedSharedPreferences.create(
+            context,
+            LEGACY_PREFS_NAME,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+        )
+    }
+
     companion object {
-        private const val PREFS_NAME = "app_lock_prefs"
+        private const val PREFS_NAME = "app_lock_prefs_v2"
+        private const val LEGACY_PREFS_NAME = "app_lock_prefs"
         private const val KEY_ENABLED = "lock_enabled"
+        private const val KEY_MIGRATED = "_migrated_from_esp"
     }
 }

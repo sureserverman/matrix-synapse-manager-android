@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
  *
  * - [isLockEnabled] persists: when true, app shows PIN screen on resume/cold start.
  * - [isLocked] is in-memory: app starts locked when enabled; [unlock] clears it after correct PIN.
- * - PIN is stored as salt + PBKDF2 hash in EncryptedSharedPreferences (never plaintext).
+ * - PIN is stored as salt + PBKDF2 hash, encrypted at rest via the Android Keystore (never plaintext).
  */
 interface AppLockManager {
     val isLockEnabled: StateFlow<Boolean>
