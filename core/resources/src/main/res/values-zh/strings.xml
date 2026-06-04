@@ -231,4 +231,5 @@
     <string name="media_action_deleted_user_items">已删除 %1$d 条用户媒体</string>
     <string name="media_action_deleted_room_items">已删除 %1$d 条房间媒体</string>
     <string name="media_action_deleted_room_items_failed">已删除 %1$d 条房间媒体（%2$d 条失败）</string>
+    <string name="login_error_admin_scope_denied">已登录，但此账户在此主服务器上没有 Synapse 管理员权限。请联系您的运营商运行 `mas-cli manage set-can-request-admin &lt;user&gt; --admin`，然后重试。</string>
 </resources>

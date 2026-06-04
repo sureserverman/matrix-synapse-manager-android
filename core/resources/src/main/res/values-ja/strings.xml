@@ -231,4 +231,5 @@
     <string name="media_action_deleted_user_items">ユーザーのメディアを %1$d 件削除しました</string>
     <string name="media_action_deleted_room_items">ルームのメディアを %1$d 件削除しました</string>
     <string name="media_action_deleted_room_items_failed">ルームのメディアを %1$d 件削除（%2$d 件失敗）</string>
+    <string name="login_error_admin_scope_denied">ログインしましたが、このアカウントにはこのホームサーバーのSynapseアドミンスコープがありません。オペレーターに以下のコマンドの実行を依頼し、再試行してください: `mas-cli manage set-can-request-admin &lt;user&gt; --admin`</string>
 </resources>

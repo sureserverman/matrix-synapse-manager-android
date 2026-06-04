@@ -231,4 +231,5 @@
     <string name="media_action_deleted_user_items">%1$d médias utilisateur supprimés</string>
     <string name="media_action_deleted_room_items">%1$d médias de salle supprimés</string>
     <string name="media_action_deleted_room_items_failed">%1$d médias de salle supprimés (%2$d échecs)</string>
+    <string name="login_error_admin_scope_denied">Connecté, mais ce compte ne dispose pas de la portée d\'administration Synapse sur ce homeserver. Demandez à votre opérateur d\'exécuter `mas-cli manage set-can-request-admin &lt;user&gt; --admin`, puis réessayez.</string>
 </resources>

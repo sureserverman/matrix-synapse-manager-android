@@ -231,4 +231,5 @@
     <string name="media_action_deleted_user_items">Eliminados %1$d medios del usuario</string>
     <string name="media_action_deleted_room_items">Eliminados %1$d medios de la sala</string>
     <string name="media_action_deleted_room_items_failed">Eliminados %1$d medios de la sala (%2$d fallidos)</string>
+    <string name="login_error_admin_scope_denied">Has iniciado sesión, pero esta cuenta no tiene el ámbito de administrador de Synapse en este homeserver. Pide a tu operador que ejecute `mas-cli manage set-can-request-admin &lt;user&gt; --admin` y vuelve a intentarlo.</string>
 </resources>

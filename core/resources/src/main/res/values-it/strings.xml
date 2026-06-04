@@ -231,4 +231,5 @@
     <string name="media_action_deleted_user_items">Eliminati %1$d media utente</string>
     <string name="media_action_deleted_room_items">Eliminati %1$d media della stanza</string>
     <string name="media_action_deleted_room_items_failed">Eliminati %1$d media della stanza (%2$d non riusciti)</string>
+    <string name="login_error_admin_scope_denied">Accesso effettuato, ma questo account non dispone dell\'ambito admin Synapse su questo homeserver. Chiedi all\'operatore di eseguire `mas-cli manage set-can-request-admin &lt;user&gt; --admin`, quindi riprova.</string>
 </resources>

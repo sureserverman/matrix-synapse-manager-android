@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">Matrix Synapse Manager</string>
+
+    <!-- Tabs / More -->
+    <string name="tab_users">الحسابات</string>
+    <string name="tab_rooms">الغرف</string>
+    <string name="tab_stats">معلومات</string>
+    <string name="tab_settings">الإعدادات</string>
+    <string name="tab_federation">الأقران</string>
+    <string name="tab_jobs">المهام</string>
+    <string name="tab_reports">التقارير</string>
+    <string name="nav_more">المزيد</string>
+    <string name="rearrange_tabs_hint">أول 4 عناصر هي علامات التبويب الرئيسية؛ يظهر الباقي ضمن «المزيد». اضغط مطوّلاً على مقبض ☰ واسحب لإعادة الترتيب.</string>
+
+    <!-- Auth -->
+    <string name="admin_login">تسجيل دخول المسؤول</string>
+    <string name="username">اسم المستخدم</string>
+    <string name="password">كلمة المرور</string>
+    <string name="sign_in">تسجيل الدخول</string>
+
+    <!-- Servers -->
+    <string name="servers">الخوادم</string>
+    <string name="no_servers_yet">لا توجد خوادم بعد</string>
+    <string name="no_servers_body">أضف خادم Synapse للبدء</string>
+    <string name="add_server">إضافة خادم</string>
+    <string name="server_form_description">اتصل بخادم Synapse الرئيسي لإدارة المستخدمين والغرف والوسائط.</string>
+    <string name="save">حفظ</string>
+    <string name="server_url">عنوان URL للخادم</string>
+    <string name="server_url_placeholder">مثال: matrix.example.com</string>
+    <string name="display_name_optional">الاسم المعروض (اختياري)</string>
+    <string name="edit_server">تعديل الخادم</string>
+    <string name="remove_server">إزالة الخادم</string>
+
+    <!-- Users -->
+    <string name="search_users">بحث عن مستخدمين</string>
+    <string name="sort_by">ترتيب حسب</string>
+    <string name="name_az">الاسم (أ←ي)</string>
+    <string name="name_za">الاسم (ي←أ)</string>
+    <string name="select_all">تحديد الكل</string>
+    <string name="selected_count">%1$d محدد</string>
+    <string name="users_count">%1$s • %2$d مستخدم</string>
+    <string name="deactivate_users_title">تعطيل المستخدمين؟</string>
+    <string name="deactivate_users_message">تعطيل %1$d مستخدم؟ لن يتمكنوا من تسجيل الدخول. لا يمكن التراجع عن هذا.</string>
+    <string name="deactivate">تعطيل</string>
+    <string name="delete_with_media">حذف مع الوسائط</string>
+    <string name="cancel">إلغاء</string>
+    <string name="deactivate_selected_users">تعطيل</string>
+    <string name="add_user">إضافة مستخدم</string>
+    <string name="no_users">لا يوجد مستخدمون</string>
+    <string name="no_users_body">لا يوجد مستخدمون للعرض</string>
+
+    <!-- User detail -->
+    <string name="user_not_found">المستخدم غير موجود</string>
+    <string name="admin">مسؤول</string>
+    <string name="locked">مقفل</string>
+    <string name="suspended">موقوف</string>
+    <string name="edit_user">تعديل المستخدم</string>
+    <string name="devices">الأجهزة</string>
+    <string name="whois_sessions">Whois / الجلسات</string>
+    <string name="media">الوسائط</string>
+    <string name="deactivate_user">تعطيل المستخدم</string>
+    <string name="deactivate_user_title">تعطيل المستخدم</string>
+    <string name="deactivate_user_message">هذا الإجراء لا يمكن عكسه. سيتم تعطيل المستخدم بشكل دائم.</string>
+    <string name="delete_all_user_media">حذف جميع وسائط المستخدم</string>
+    <string name="you_cannot_lock_yourself">لا يمكنك قفل حسابك الخاص أو تعطيله.</string>
+    <string name="user_deactivated">تم تعطيل المستخدم</string>
+    <string name="create_user">إنشاء مستخدم</string>
+    <string name="create">إنشاء</string>
+
+    <!-- User edit -->
+    <string name="user_id">معرّف المستخدم</string>
+    <string name="server_admin">مسؤول الخادم</string>
+
+    <!-- Devices -->
+    <string name="no_devices_found">لم يُعثر على أجهزة</string>
+    <string name="delete_device">حذف الجهاز</string>
+    <string name="delete_device_message">إزالة %1$s من هذا الحساب. سيتم تسجيل خروج المستخدم من ذلك الجهاز.</string>
+    <string name="delete_device_desc">حذف الجهاز</string>
+
+    <!-- Sessions / Whois -->
+    <string name="sessions">الجلسات</string>
+    <string name="no_active_connections">لا توجد اتصالات نشطة</string>
+    <string name="device_label">الجهاز: %1$s</string>
+    <string name="ip_label">IP: %1$s</string>
+    <string name="agent_label">العميل: %1$s</string>
+    <string name="last_seen">آخر ظهور: %1$s</string>
+
+    <!-- Rooms -->
+    <string name="search_rooms">بحث عن غرف</string>
+    <string name="no_rooms">لا توجد غرف</string>
+    <string name="no_rooms_body">لا توجد غرف على هذا الخادم بعد.</string>
+    <string name="rooms_count">%1$s • %2$d غرفة</string>
+    <string name="delete_rooms_title">حذف الغرف؟</string>
+    <string name="delete_rooms_message">حذف %1$d غرفة؟ لا يمكن التراجع عن هذا.</string>
+    <string name="delete">حذف</string>
+    <string name="delete_selected_rooms">حذف الغرف المحددة</string>
+    <string name="members_most_first">الأعضاء (الأكثر أولاً)</string>
+    <string name="members_least_first">الأعضاء (الأقل أولاً)</string>
+    <string name="state_events_most_first">أحداث الحالة (الأكثر أولاً)</string>
+    <string name="state_events_least_first">أحداث الحالة (الأقل أولاً)</string>
+    <string name="sort">ترتيب</string>
+    <string name="members_format">%1$d عضو</string>
+    <string name="encrypted_suffix"> • مشفّر</string>
+
+    <!-- Room detail -->
+    <string name="copy_room_id">نسخ معرّف الغرفة: %1$s</string>
+    <string name="room_detail">تفاصيل الغرفة</string>
+    <string name="unnamed_room">غرفة بلا اسم</string>
+    <string name="unblock_room">إلغاء حظر الغرفة</string>
+    <string name="deleting">جارٍ الحذف…</string>
+    <string name="show_members_count">إظهار الأعضاء (%1$d)</string>
+    <string name="hide_members_count">إخفاء الأعضاء (%1$d)</string>
+    <string name="room_info">معلومات الغرفة</string>
+    <string name="actions">الإجراءات</string>
+    <string name="make_me_room_admin">جعلني مسؤول الغرفة</string>
+    <string name="room_media">وسائط الغرفة</string>
+    <string name="join">انضمام</string>
+    <string name="delete_room">حذف الغرفة</string>
+    <string name="delete_room_message">لا يمكن التراجع عن هذا الإجراء.</string>
+    <string name="purge_remove_all_traces">تنظيف (إزالة جميع الآثار)</string>
+    <string name="block_room">حظر الغرفة</string>
+    <string name="reason_optional">السبب (اختياري)</string>
+
+    <!-- Stats / Dashboard -->
+    <string name="server_version">إصدار الخادم</string>
+    <string name="total_users">إجمالي المستخدمين</string>
+    <string name="total_rooms">إجمالي الغرف</string>
+    <string name="total_media_storage">إجمالي مساحة الوسائط</string>
+    <string name="federation">الاتحاد</string>
+    <string name="background_updates">التحديثات في الخلفية</string>
+    <string name="open_reports">التقارير المفتوحة</string>
+    <string name="top_media_users">أكثر المستخدمين استهلاكاً للوسائط</string>
+    <string name="no_data">لا توجد بيانات</string>
+    <string name="files_count">%1$d ملف</string>
+
+    <!-- Media -->
+    <string name="media_detail">تفاصيل الوسائط</string>
+    <string name="media_info">معلومات الوسائط</string>
+    <string name="remove_from_quarantine">إزالة من العزل</string>
+    <string name="quarantine">عزل</string>
+    <string name="remove_protection">إزالة الحماية</string>
+    <string name="protect_from_quarantine">حماية من العزل</string>
+    <string name="delete_media">حذف الوسائط</string>
+    <string name="delete_media_message">سيؤدي هذا إلى حذف هذا العنصر من الوسائط بشكل دائم. لا يمكن التراجع عن هذا.</string>
+    <string name="bulk_delete">حذف مجمّع</string>
+    <string name="purge_cache">مسح ذاكرة التخزين المؤقت</string>
+    <string name="bulk_delete_local_media_title">حذف مجمّع للوسائط المحلية</string>
+    <string name="bulk_delete_local_media_message">حذف الوسائط المحلية التي لم يُصل إليها خلال الفترة المحددة.</string>
+    <string name="days_old">عمر بالأيام</string>
+    <string name="min_size_optional">الحجم الأدنى (بايت، اختياري)</string>
+    <string name="keep_profile_media">الاحتفاظ بوسائط الملف الشخصي</string>
+    <string name="purge_remote_media_title">مسح ذاكرة تخزين الوسائط البعيدة</string>
+    <string name="purge_remote_media_message">مسح الوسائط البعيدة المخزنة مؤقتاً التي لم يُصل إليها خلال الفترة المحددة.</string>
+    <string name="purge">مسح</string>
+    <string name="room">الغرفة</string>
+    <string name="select_room">الغرفة</string>
+    <string name="user">المستخدم</string>
+    <string name="select_user">المستخدم</string>
+    <string name="loading">جارٍ التحميل…</string>
+    <string name="media_local">محلي</string>
+    <string name="media_remote">بعيد</string>
+    <string name="no_media_found">لم يُعثر على وسائط</string>
+    <string name="select_room_or_user_to_list_media">حدد غرفة أو مستخدماً أعلاه لعرض الوسائط.</string>
+    <string name="media_select">تحديد</string>
+    <string name="media_delete_selected">حذف المحدد</string>
+    <string name="media_delete_user_scoped">حذف وسائط المستخدم</string>
+    <string name="media_delete_room_scoped">حذف وسائط الغرفة</string>
+    <string name="media_user_created_filter_hint">اختياري: فلترة قائمة المستخدمين حسب وقت الرفع (Unix ms، created_ts).</string>
+    <string name="media_apply_date_filter">تطبيق فلتر الوقت</string>
+    <string name="media_clear_date_filter">مسح فلتر الوقت</string>
+    <string name="media_from_ts">تاريخ الإنشاء من/بعد (ms)</string>
+    <string name="media_until_ts">تاريخ الإنشاء حتى/قبل (ms)</string>
+    <string name="media_delete_user_confirm_title">حذف وسائط هذا المستخدم؟</string>
+    <string name="media_delete_user_confirm_body">يحذف الوسائط المحلية التي رفعها هذا المستخدم، ويمكن تحديدها باستخدام فلتر وقت الإنشاء الذي ضبطته. لا يزيل الوسائط المُشار إليها فقط من مستودعات خوادم رئيسية أخرى.</string>
+    <string name="media_delete_room_confirm_title">حذف وسائط الغرفة المدرجة؟</string>
+    <string name="media_delete_room_confirm_body">يحذف كل عنصر وسائط مدرج لهذه الغرفة (النسخ المحلية والنسخ البعيدة المخزنة مؤقتاً على هذا الخادم). تتضمن قوائم الغرف الوسائط من الأحداث غير المشفرة فقط.</string>
+    <string name="media_section_scope">النطاق</string>
+    <string name="media_section_time_filter">وقت الرفع (اختياري)</string>
+    <string name="media_section_list">الوسائط</string>
+    <string name="media_actions_hint">اضغط على صف للتحديد أو إلغاء التحديد. اضغط مطوّلاً لفتح التفاصيل.</string>
+    <string name="media_cd_clear_selection">مسح التحديد</string>
+    <string name="media_cd_delete_selected">حذف الوسائط المحددة</string>
+    <string name="media_cd_delete_user_media">حذف جميع وسائط هذا المستخدم</string>
+    <string name="media_cd_delete_room_media">حذف جميع الوسائط المدرجة لهذه الغرفة</string>
+    <string name="media_detail_label_media_id">معرّف الوسائط</string>
+    <string name="media_detail_label_type">النوع</string>
+    <string name="media_detail_label_size">الحجم</string>
+    <string name="media_detail_label_upload_name">اسم الملف المرفوع</string>
+    <string name="media_detail_label_created">تاريخ الإنشاء</string>
+    <string name="media_detail_label_last_accessed">آخر وصول</string>
+    <string name="media_detail_label_quarantined_by">مُعزَل بواسطة</string>
+    <string name="media_detail_label_protected">محمي</string>
+    <string name="media_detail_unknown_type">غير معروف</string>
+    <string name="common_yes">نعم</string>
+    <string name="common_no">لا</string>
+    <string name="media_action_quarantined">تم عزل الوسائط</string>
+    <string name="media_action_unquarantined">تمت إزالة الوسائط من العزل</string>
+    <string name="media_action_protected">الوسائط محمية من العزل</string>
+    <string name="media_action_unprotected">تمت إزالة حماية الوسائط</string>
+    <string name="media_action_deleted">تم حذف الوسائط</string>
+    <string name="media_error_invalid_date_range">نطاق تاريخ غير صالح</string>
+    <string name="media_action_deleted_items">تم حذف %1$d عنصر</string>
+    <string name="media_action_deleted_items_failed">تم حذف %1$d عنصر (%2$d فشل)</string>
+    <string name="media_action_deleted_user_items">تم حذف %1$d عنصر من وسائط المستخدم</string>
+    <string name="media_action_deleted_room_items">تم حذف %1$d عنصر من وسائط الغرفة</string>
+    <string name="media_action_deleted_room_items_failed">تم حذف %1$d عنصر من وسائط الغرفة (%2$d فشل)</string>
+
+    <!-- Federation -->
+    <string name="connection_info">معلومات الاتصال</string>
+    <string name="reset_connection">إعادة تعيين الاتصال</string>
+    <string name="shared_rooms_count">الغرف المشتركة (%1$d)</string>
+    <string name="load_more_rooms">تحميل المزيد من الغرف</string>
+    <string name="reset_connection_message">سيؤدي هذا إلى إعادة تعيين توقيت إعادة المحاولة لـ %1$s ومحاولة إعادة الاتصال فوراً.</string>
+    <string name="reset">إعادة تعيين</string>
+    <string name="healthy">سليم</string>
+    <string name="retrying">جارٍ إعادة المحاولة</string>
+    <string name="failing">فاشل</string>
+    <string name="retry_interval">فترة إعادة المحاولة: %1$s</string>
+
+    <!-- Event reports -->
+    <string name="event_reports_title">تقارير الأحداث (%1$d)</string>
+    <string name="room_label">الغرفة: %1$s</string>
+    <string name="room_filter">الغرفة</string>
+    <string name="all_rooms">جميع الغرف</string>
+    <string name="reporter">المُبلِّغ</string>
+    <string name="all_reporters">جميع المُبلِّغين</string>
+    <string name="report_number">تقرير #%1$s</string>
+    <string name="newest_first">الأحدث أولاً</string>
+    <string name="oldest_first">الأقدم أولاً</string>
+    <string name="no_reports_found">لم يُعثر على تقارير</string>
+    <string name="report_info">معلومات التقرير</string>
+    <string name="event_content">محتوى الحدث</string>
+    <string name="delete_report">حذف التقرير</string>
+    <string name="delete_report_message">سيؤدي هذا إلى إزالة التقرير من الخادم. لن يتأثر الحدث المُبلَّغ عنه.</string>
+
+    <!-- Jobs -->
+    <string name="background_jobs">المهام في الخلفية</string>
+    <string name="retry">إعادة المحاولة</string>
+    <string name="current_updates">التحديثات الحالية</string>
+    <string name="items_count">%1$d عنصر</string>
+    <string name="run_job">تشغيل المهمة</string>
+
+    <string name="job_regenerate_directory">إعادة إنشاء دليل المستخدمين</string>
+    <string name="job_populate_stats">إعادة حساب إحصائيات الغرف</string>
+
+    <!-- Settings -->
+    <string name="settings">الإعدادات</string>
+    <string name="rearrange_tabs">إعادة ترتيب علامات التبويب</string>
+    <string name="drag_to_reorder">اسحب لإعادة الترتيب</string>
+    <string name="theme">المظهر</string>
+    <string name="theme_system">افتراضي النظام</string>
+    <string name="theme_light">فاتح</string>
+    <string name="theme_dark">داكن</string>
+    <string name="theme_summary_system">اتباع إعداد الجهاز</string>
+    <string name="app_lock">قفل التطبيق</string>
+    <string name="change_pin">تغيير رمز PIN</string>
+    <string name="enter_pin_to_unlock">أدخل رمز PIN للفتح</string>
+    <string name="backspace">مسح</string>
+    <string name="pins_dont_match">رمزا PIN غير متطابقَين. حاول مرة أخرى.</string>
+    <string name="back">رجوع</string>
+    <string name="enter_current_pin">أدخل رمز PIN الحالي</string>
+    <string name="enter_pin">أدخل رمز PIN</string>
+    <string name="reenter_pin">أعد إدخال رمز PIN</string>
+
+    <!-- Common / Top bar -->
+    <string name="current_server_tap">اضغط لإدارة الخوادم</string>
+    <string name="back_nav">رجوع</string>
+
+    <!-- Login errors -->
+    <string name="login_error_admin_scope_denied">تم تسجيل الدخول، غير أن هذا الحساب لا يملك نطاق مسؤول Synapse على هذا homeserver. اطلب من مشغّل الخادم تشغيل الأمر `mas-cli manage set-can-request-admin &lt;user&gt; --admin`، ثم أعد المحاولة.</string>
+</resources>

@@ -231,4 +231,5 @@
     <string name="media_action_deleted_user_items">Удалено пользовательских медиа: %1$d</string>
     <string name="media_action_deleted_room_items">Удалено медиа комнаты: %1$d</string>
     <string name="media_action_deleted_room_items_failed">Удалено медиа комнаты: %1$d (ошибок: %2$d)</string>
+    <string name="login_error_admin_scope_denied">Вход выполнен, но у этой учётной записи нет прав администратора Synapse на этом homeserver. Попросите оператора выполнить `mas-cli manage set-can-request-admin &lt;user&gt; --admin`, затем повторите попытку.</string>
 </resources>

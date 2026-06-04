@@ -231,4 +231,5 @@
     <string name="media_action_deleted_user_items">%1$d Nutzermedien gelöscht</string>
     <string name="media_action_deleted_room_items">%1$d Raummedien gelöscht</string>
     <string name="media_action_deleted_room_items_failed">%1$d Raummedien gelöscht (%2$d fehlgeschlagen)</string>
+    <string name="login_error_admin_scope_denied">Angemeldet, aber dieses Konto hat keinen Synapse-Admin-Scope auf diesem Homeserver. Bitten Sie Ihren Betreiber, `mas-cli manage set-can-request-admin &lt;user&gt; --admin` auszuführen, und versuchen Sie es erneut.</string>
 </resources>

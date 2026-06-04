@@ -231,4 +231,5 @@
     <string name="media_action_deleted_user_items">%1$d itens de mídia do usuário excluídos</string>
     <string name="media_action_deleted_room_items">%1$d itens de mídia da sala excluídos</string>
     <string name="media_action_deleted_room_items_failed">%1$d itens de mídia da sala excluídos (%2$d falhas)</string>
+    <string name="login_error_admin_scope_denied">Login realizado, mas esta conta não tem escopo de administrador do Synapse neste homeserver. Peça ao operador para executar `mas-cli manage set-can-request-admin &lt;user&gt; --admin` e tente novamente.</string>
 </resources>

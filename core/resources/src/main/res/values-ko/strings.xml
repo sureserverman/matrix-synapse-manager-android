@@ -231,4 +231,5 @@
     <string name="media_action_deleted_user_items">사용자 미디어 %1$d개 삭제됨</string>
     <string name="media_action_deleted_room_items">방 미디어 %1$d개 삭제됨</string>
     <string name="media_action_deleted_room_items_failed">방 미디어 %1$d개 삭제됨(%2$d개 실패)</string>
+    <string name="login_error_admin_scope_denied">로그인되었지만, 이 계정은 홈서버에서 Synapse 관리자 범위(admin scope)가 없습니다. 운영자에게 `mas-cli manage set-can-request-admin &lt;user&gt; --admin` 명령어를 실행하도록 요청한 후 다시 시도하세요.</string>
 </resources>

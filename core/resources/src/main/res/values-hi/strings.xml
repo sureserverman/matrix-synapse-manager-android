@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">Matrix Synapse Manager</string>
+
+    <!-- Tabs / More -->
+    <string name="tab_users">खाते</string>
+    <string name="tab_rooms">कमरे</string>
+    <string name="tab_stats">जानकारी</string>
+    <string name="tab_settings">कॉन्फ़िग</string>
+    <string name="tab_federation">पीयर</string>
+    <string name="tab_jobs">कार्य</string>
+    <string name="tab_reports">रिपोर्ट</string>
+    <string name="nav_more">और</string>
+    <string name="rearrange_tabs_hint">पहले 4 आइटम मुख्य टैब हैं; बाकी \"और\" के अंतर्गत दिखते हैं। क्रम बदलने के लिए ☰ हैंडल को देर तक दबाएँ और खींचें।</string>
+
+    <!-- Auth -->
+    <string name="admin_login">व्यवस्थापक लॉगिन</string>
+    <string name="username">उपयोगकर्ता नाम</string>
+    <string name="password">पासवर्ड</string>
+    <string name="sign_in">साइन इन करें</string>
+
+    <!-- Servers -->
+    <string name="servers">सर्वर</string>
+    <string name="no_servers_yet">अभी कोई सर्वर नहीं</string>
+    <string name="no_servers_body">शुरू करने के लिए एक Synapse सर्वर जोड़ें</string>
+    <string name="add_server">सर्वर जोड़ें</string>
+    <string name="server_form_description">उपयोगकर्ताओं, कमरों और मीडिया को प्रबंधित करने के लिए एक Synapse होमसर्वर से कनेक्ट करें।</string>
+    <string name="save">सहेजें</string>
+    <string name="server_url">सर्वर URL</string>
+    <string name="server_url_placeholder">उदा. matrix.example.com</string>
+    <string name="display_name_optional">प्रदर्शन नाम (वैकल्पिक)</string>
+    <string name="edit_server">सर्वर संपादित करें</string>
+    <string name="remove_server">सर्वर हटाएँ</string>
+
+    <!-- Users -->
+    <string name="search_users">उपयोगकर्ता खोजें</string>
+    <string name="sort_by">इसके आधार पर क्रमबद्ध करें</string>
+    <string name="name_az">नाम (A→Z)</string>
+    <string name="name_za">नाम (Z→A)</string>
+    <string name="select_all">सभी चुनें</string>
+    <string name="selected_count">%1$d चयनित</string>
+    <string name="users_count">%1$s • %2$d उपयोगकर्ता</string>
+    <string name="deactivate_users_title">उपयोगकर्ताओं को निष्क्रिय करें?</string>
+    <string name="deactivate_users_message">%1$d उपयोगकर्ता निष्क्रिय करें? वे लॉग इन नहीं कर पाएँगे। यह क्रिया पूर्ववत नहीं की जा सकती।</string>
+    <string name="deactivate">निष्क्रिय करें</string>
+    <string name="delete_with_media">मीडिया सहित हटाएँ</string>
+    <string name="cancel">रद्द करें</string>
+    <string name="deactivate_selected_users">निष्क्रिय करें</string>
+    <string name="add_user">उपयोगकर्ता जोड़ें</string>
+    <string name="no_users">कोई उपयोगकर्ता नहीं</string>
+    <string name="no_users_body">दिखाने के लिए कोई उपयोगकर्ता नहीं</string>
+
+    <!-- User detail -->
+    <string name="user_not_found">उपयोगकर्ता नहीं मिला</string>
+    <string name="admin">व्यवस्थापक</string>
+    <string name="locked">लॉक्ड</string>
+    <string name="suspended">निलंबित</string>
+    <string name="edit_user">उपयोगकर्ता संपादित करें</string>
+    <string name="devices">डिवाइस</string>
+    <string name="whois_sessions">Whois / सत्र</string>
+    <string name="media">मीडिया</string>
+    <string name="deactivate_user">उपयोगकर्ता निष्क्रिय करें</string>
+    <string name="deactivate_user_title">उपयोगकर्ता निष्क्रिय करें</string>
+    <string name="deactivate_user_message">यह क्रिया अपरिवर्तनीय है। उपयोगकर्ता स्थायी रूप से निष्क्रिय कर दिया जाएगा।</string>
+    <string name="delete_all_user_media">उपयोगकर्ता का सभी मीडिया हटाएँ</string>
+    <string name="you_cannot_lock_yourself">आप स्वयं को लॉक या निष्क्रिय नहीं कर सकते।</string>
+    <string name="user_deactivated">उपयोगकर्ता निष्क्रिय किया गया</string>
+    <string name="create_user">उपयोगकर्ता बनाएँ</string>
+    <string name="create">बनाएँ</string>
+
+    <!-- User edit -->
+    <string name="user_id">उपयोगकर्ता ID</string>
+    <string name="server_admin">सर्वर व्यवस्थापक</string>
+
+    <!-- Devices -->
+    <string name="no_devices_found">कोई डिवाइस नहीं मिला</string>
+    <string name="delete_device">डिवाइस हटाएँ</string>
+    <string name="delete_device_message">इस खाते से %1$s हटाएँ। उस डिवाइस पर उपयोगकर्ता साइन आउट कर दिया जाएगा।</string>
+    <string name="delete_device_desc">डिवाइस हटाएँ</string>
+
+    <!-- Sessions / Whois -->
+    <string name="sessions">सत्र</string>
+    <string name="no_active_connections">कोई सक्रिय कनेक्शन नहीं</string>
+    <string name="device_label">डिवाइस: %1$s</string>
+    <string name="ip_label">IP: %1$s</string>
+    <string name="agent_label">एजेंट: %1$s</string>
+    <string name="last_seen">अंतिम बार देखा: %1$s</string>
+
+    <!-- Rooms -->
+    <string name="search_rooms">कमरे खोजें</string>
+    <string name="no_rooms">कोई कमरा नहीं</string>
+    <string name="no_rooms_body">इस सर्वर पर अभी कोई कमरा नहीं है।</string>
+    <string name="rooms_count">%1$s • %2$d कमरे</string>
+    <string name="delete_rooms_title">कमरे हटाएँ?</string>
+    <string name="delete_rooms_message">%1$d कमरे हटाएँ? यह क्रिया पूर्ववत नहीं की जा सकती।</string>
+    <string name="delete">हटाएँ</string>
+    <string name="delete_selected_rooms">चयनित कमरे हटाएँ</string>
+    <string name="members_most_first">सदस्य (सबसे अधिक पहले)</string>
+    <string name="members_least_first">सदस्य (सबसे कम पहले)</string>
+    <string name="state_events_most_first">स्थिति इवेंट (सबसे अधिक पहले)</string>
+    <string name="state_events_least_first">स्थिति इवेंट (सबसे कम पहले)</string>
+    <string name="sort">क्रमबद्ध करें</string>
+    <string name="members_format">%1$d सदस्य</string>
+    <string name="encrypted_suffix"> • एन्क्रिप्टेड</string>
+
+    <!-- Room detail -->
+    <string name="copy_room_id">कमरे का ID कॉपी करें: %1$s</string>
+    <string name="room_detail">कमरे का विवरण</string>
+    <string name="unnamed_room">अनाम कमरा</string>
+    <string name="unblock_room">कमरा अनब्लॉक करें</string>
+    <string name="deleting">हटाया जा रहा है…</string>
+    <string name="show_members_count">सदस्य दिखाएँ (%1$d)</string>
+    <string name="hide_members_count">सदस्य छुपाएँ (%1$d)</string>
+    <string name="room_info">कमरे की जानकारी</string>
+    <string name="actions">क्रियाएँ</string>
+    <string name="make_me_room_admin">मुझे कमरे का व्यवस्थापक बनाएँ</string>
+    <string name="room_media">कमरे का मीडिया</string>
+    <string name="join">शामिल हों</string>
+    <string name="delete_room">कमरा हटाएँ</string>
+    <string name="delete_room_message">यह क्रिया पूर्ववत नहीं की जा सकती।</string>
+    <string name="purge_remove_all_traces">पर्ज करें (सभी निशान मिटाएँ)</string>
+    <string name="block_room">कमरा ब्लॉक करें</string>
+    <string name="reason_optional">कारण (वैकल्पिक)</string>
+
+    <!-- Stats / Dashboard -->
+    <string name="server_version">सर्वर संस्करण</string>
+    <string name="total_users">कुल उपयोगकर्ता</string>
+    <string name="total_rooms">कुल कमरे</string>
+    <string name="total_media_storage">कुल मीडिया संग्रहण</string>
+    <string name="federation">फेडरेशन</string>
+    <string name="background_updates">पृष्ठभूमि अपडेट</string>
+    <string name="open_reports">खुली रिपोर्ट</string>
+    <string name="top_media_users">शीर्ष मीडिया उपयोगकर्ता</string>
+    <string name="no_data">कोई डेटा नहीं</string>
+    <string name="files_count">%1$d फ़ाइलें</string>
+
+    <!-- Media -->
+    <string name="media_detail">मीडिया विवरण</string>
+    <string name="media_info">मीडिया जानकारी</string>
+    <string name="remove_from_quarantine">क्वारंटाइन से हटाएँ</string>
+    <string name="quarantine">क्वारंटाइन</string>
+    <string name="remove_protection">सुरक्षा हटाएँ</string>
+    <string name="protect_from_quarantine">क्वारंटाइन से सुरक्षित करें</string>
+    <string name="delete_media">मीडिया हटाएँ</string>
+    <string name="delete_media_message">यह मीडिया आइटम स्थायी रूप से हटा दिया जाएगा। यह क्रिया पूर्ववत नहीं की जा सकती।</string>
+    <string name="bulk_delete">थोक में हटाएँ</string>
+    <string name="purge_cache">कैश पर्ज करें</string>
+    <string name="bulk_delete_local_media_title">स्थानीय मीडिया थोक में हटाएँ</string>
+    <string name="bulk_delete_local_media_message">निर्दिष्ट अवधि के भीतर एक्सेस नहीं किया गया स्थानीय मीडिया हटाएँ।</string>
+    <string name="days_old">दिन पुराना</string>
+    <string name="min_size_optional">न्यूनतम आकार (बाइट, वैकल्पिक)</string>
+    <string name="keep_profile_media">प्रोफ़ाइल मीडिया रखें</string>
+    <string name="purge_remote_media_title">रिमोट मीडिया कैश पर्ज करें</string>
+    <string name="purge_remote_media_message">निर्दिष्ट अवधि के भीतर एक्सेस नहीं किया गया कैश्ड रिमोट मीडिया पर्ज करें।</string>
+    <string name="purge">पर्ज करें</string>
+    <string name="room">कमरा</string>
+    <string name="select_room">कमरा</string>
+    <string name="user">उपयोगकर्ता</string>
+    <string name="select_user">उपयोगकर्ता</string>
+    <string name="loading">लोड हो रहा है…</string>
+    <string name="media_local">स्थानीय</string>
+    <string name="media_remote">रिमोट</string>
+    <string name="no_media_found">कोई मीडिया नहीं मिला</string>
+    <string name="select_room_or_user_to_list_media">मीडिया सूचीबद्ध करने के लिए ऊपर कोई कमरा या उपयोगकर्ता चुनें।</string>
+    <string name="media_select">चुनें</string>
+    <string name="media_delete_selected">चयनित मीडिया हटाएँ</string>
+    <string name="media_delete_user_scoped">उपयोगकर्ता का मीडिया हटाएँ</string>
+    <string name="media_delete_room_scoped">कमरे का मीडिया हटाएँ</string>
+    <string name="media_user_created_filter_hint">वैकल्पिक: अपलोड समय (Unix ms, created_ts) के अनुसार उपयोगकर्ता सूची फ़िल्टर करें।</string>
+    <string name="media_apply_date_filter">समय फ़िल्टर लागू करें</string>
+    <string name="media_clear_date_filter">समय फ़िल्टर हटाएँ</string>
+    <string name="media_from_ts">बनाया गया/बाद (ms)</string>
+    <string name="media_until_ts">बनाया गया/पहले (ms)</string>
+    <string name="media_delete_user_confirm_title">इस उपयोगकर्ता का मीडिया हटाएँ?</string>
+    <string name="media_delete_user_confirm_body">इस उपयोगकर्ता द्वारा अपलोड किया गया स्थानीय मीडिया हटाता है, वैकल्पिक रूप से आपके सेट किए गए created-time फ़िल्टर तक सीमित। अन्य homeservers के रेपो से केवल संदर्भित मीडिया नहीं हटाता।</string>
+    <string name="media_delete_room_confirm_title">सूचीबद्ध कमरे का मीडिया हटाएँ?</string>
+    <string name="media_delete_room_confirm_body">इस कमरे के लिए सूचीबद्ध प्रत्येक मीडिया आइटम हटाता है (इस सर्वर पर स्थानीय और कैश्ड रिमोट प्रतियाँ)। कमरे की सूचियों में केवल अनएन्क्रिप्टेड इवेंट का मीडिया शामिल होता है।</string>
+    <string name="media_section_scope">दायरा</string>
+    <string name="media_section_time_filter">अपलोड समय (वैकल्पिक)</string>
+    <string name="media_section_list">मीडिया</string>
+    <string name="media_actions_hint">चुनने या अचुनने के लिए एक पंक्ति पर टैप करें। विवरण खोलने के लिए देर तक दबाएँ।</string>
+    <string name="media_cd_clear_selection">चयन साफ़ करें</string>
+    <string name="media_cd_delete_selected">चयनित मीडिया हटाएँ</string>
+    <string name="media_cd_delete_user_media">इस उपयोगकर्ता का सभी मीडिया हटाएँ</string>
+    <string name="media_cd_delete_room_media">इस कमरे का सभी सूचीबद्ध मीडिया हटाएँ</string>
+    <string name="media_detail_label_media_id">मीडिया ID</string>
+    <string name="media_detail_label_type">प्रकार</string>
+    <string name="media_detail_label_size">आकार</string>
+    <string name="media_detail_label_upload_name">अपलोड नाम</string>
+    <string name="media_detail_label_created">बनाया गया</string>
+    <string name="media_detail_label_last_accessed">अंतिम बार एक्सेस किया</string>
+    <string name="media_detail_label_quarantined_by">किसके द्वारा क्वारंटाइन किया गया</string>
+    <string name="media_detail_label_protected">सुरक्षित</string>
+    <string name="media_detail_unknown_type">अज्ञात</string>
+    <string name="common_yes">हाँ</string>
+    <string name="common_no">नहीं</string>
+    <string name="media_action_quarantined">मीडिया क्वारंटाइन किया गया</string>
+    <string name="media_action_unquarantined">मीडिया क्वारंटाइन से हटाया गया</string>
+    <string name="media_action_protected">मीडिया क्वारंटाइन से सुरक्षित किया गया</string>
+    <string name="media_action_unprotected">मीडिया सुरक्षा हटाई गई</string>
+    <string name="media_action_deleted">मीडिया हटाया गया</string>
+    <string name="media_error_invalid_date_range">अमान्य तिथि सीमा</string>
+    <string name="media_action_deleted_items">%1$d आइटम हटाए गए</string>
+    <string name="media_action_deleted_items_failed">%1$d आइटम हटाए गए (%2$d विफल)</string>
+    <string name="media_action_deleted_user_items">%1$d उपयोगकर्ता मीडिया आइटम हटाए गए</string>
+    <string name="media_action_deleted_room_items">%1$d कमरे के मीडिया आइटम हटाए गए</string>
+    <string name="media_action_deleted_room_items_failed">%1$d कमरे के मीडिया आइटम हटाए गए (%2$d विफल)</string>
+
+    <!-- Federation -->
+    <string name="connection_info">कनेक्शन जानकारी</string>
+    <string name="reset_connection">कनेक्शन रीसेट करें</string>
+    <string name="shared_rooms_count">साझा कमरे (%1$d)</string>
+    <string name="load_more_rooms">और कमरे लोड करें</string>
+    <string name="reset_connection_message">यह %1$s के लिए पुनः प्रयास समय रीसेट करेगा और तुरंत पुनः कनेक्ट करने का प्रयास करेगा।</string>
+    <string name="reset">रीसेट करें</string>
+    <string name="healthy">स्वस्थ</string>
+    <string name="retrying">पुनः प्रयास हो रहा है</string>
+    <string name="failing">विफल हो रहा है</string>
+    <string name="retry_interval">पुनः प्रयास अंतराल: %1$s</string>
+
+    <!-- Event reports -->
+    <string name="event_reports_title">इवेंट रिपोर्ट (%1$d)</string>
+    <string name="room_label">कमरा: %1$s</string>
+    <string name="room_filter">कमरा</string>
+    <string name="all_rooms">सभी कमरे</string>
+    <string name="reporter">रिपोर्टर</string>
+    <string name="all_reporters">सभी रिपोर्टर</string>
+    <string name="report_number">रिपोर्ट #%1$s</string>
+    <string name="newest_first">सबसे नया पहले</string>
+    <string name="oldest_first">सबसे पुराना पहले</string>
+    <string name="no_reports_found">कोई रिपोर्ट नहीं मिली</string>
+    <string name="report_info">रिपोर्ट जानकारी</string>
+    <string name="event_content">इवेंट सामग्री</string>
+    <string name="delete_report">रिपोर्ट हटाएँ</string>
+    <string name="delete_report_message">यह सर्वर से रिपोर्ट हटा देगा। रिपोर्ट किया गया इवेंट संशोधित नहीं होता।</string>
+
+    <!-- Jobs -->
+    <string name="background_jobs">पृष्ठभूमि कार्य</string>
+    <string name="retry">पुनः प्रयास करें</string>
+    <string name="current_updates">वर्तमान अपडेट</string>
+    <string name="items_count">%1$d आइटम</string>
+    <string name="run_job">कार्य चलाएँ</string>
+
+    <string name="job_regenerate_directory">उपयोगकर्ता डायरेक्टरी पुनर्जनित करें</string>
+    <string name="job_populate_stats">कमरे की सांख्यिकी पुनर्गणना करें</string>
+
+    <!-- Settings -->
+    <string name="settings">सेटिंग</string>
+    <string name="rearrange_tabs">टैब पुनर्व्यवस्थित करें</string>
+    <string name="drag_to_reorder">क्रम बदलने के लिए खींचें</string>
+    <string name="theme">थीम</string>
+    <string name="theme_system">सिस्टम डिफ़ॉल्ट</string>
+    <string name="theme_light">हल्का</string>
+    <string name="theme_dark">गहरा</string>
+    <string name="theme_summary_system">डिवाइस सेटिंग का अनुसरण करें</string>
+    <string name="app_lock">ऐप लॉक</string>
+    <string name="change_pin">PIN बदलें</string>
+    <string name="enter_pin_to_unlock">अनलॉक करने के लिए PIN दर्ज करें</string>
+    <string name="backspace">बैकस्पेस</string>
+    <string name="pins_dont_match">PIN मेल नहीं खाते। फिर से प्रयास करें।</string>
+    <string name="back">वापस</string>
+    <string name="enter_current_pin">वर्तमान PIN दर्ज करें</string>
+    <string name="enter_pin">PIN दर्ज करें</string>
+    <string name="reenter_pin">PIN पुनः दर्ज करें</string>
+
+    <!-- Common / Top bar -->
+    <string name="current_server_tap">सर्वर प्रबंधित करने के लिए टैप करें</string>
+    <string name="back_nav">वापस</string>
+
+    <!-- Auth errors -->
+    <string name="login_error_admin_scope_denied">लॉग इन हो गए, लेकिन इस खाते को इस होमसर्वर पर Synapse व्यवस्थापक स्कोप नहीं मिला है। अपने ऑपरेटर से `mas-cli manage set-can-request-admin &lt;user&gt; --admin` चलाने के लिए कहें, फिर पुनः प्रयास करें।</string>
+</resources>
